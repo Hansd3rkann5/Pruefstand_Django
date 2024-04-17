@@ -1,0 +1,53 @@
+Motor:
+  - name: HPR30
+    relay: 1
+  - name: HPR50
+    relay: 2
+  - name: HPR50+
+    relay: 3
+  - name: HPR50 light
+    relay: 4
+
+Display:
+  - name: small
+    relay: 5
+  - name: big
+    relay: 6
+  - name: color
+    relay: 7
+  - name: black/white
+    relay: 8
+
+Battery:
+  - name: 320 kWh
+    relay: 9
+  - name: 250 kWh
+    relay: 10
+  - name: 400 kWh
+    relay: 11
+  - name: 350 kWh
+    relay: 12
+
+Charger:
+  - name: "1"
+    relay: 13
+  - name: "2"
+    relay: 14
+  - name: "3"
+    relay: 15
+  - name: "4"
+    relay: 16
+
+"Range EXT":
+  - name: 20 kWh
+    relay: 17
+  - name: 50 kWh
+    relay: 18
+
+"Service Dongle":
+  - name: "1"
+    relay: 19
+  - name: "2"
+    relay: 20
+  - name: "3"
+    relay: 21

@@ -1,0 +1,6 @@
+Motor: HPR30
+Display: small
+Battery: 320 kWh
+Charger: 1
+Range Ext: None
+Service Dongle: None
