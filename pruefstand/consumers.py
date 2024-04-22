@@ -17,7 +17,7 @@ def show_error(exception):
 class ModBusRelay():
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.serial = serial.Serial("/dev/ttyS0",9600,timeout=1)    
+        #self.serial = serial.Serial("/dev/ttyS0",9600,timeout=1)    
         self.cmd = [0x01, 0x05, 0, 0, 0, 0, 0, 0]
         self.cons = ["Motor", "Display", "Battery", "Charger", "Range EXT", "Service Dongle"]
         self.comps = yaml.safe_load(open(f"komp_pruefstand/static/Komponenten/Komponenten.yaml", "r"))
@@ -38,7 +38,7 @@ class ModBusRelay():
             self.cmd[6] = 0xFD
             self.cmd[7] = 0xFA
             print(f"all off: {self.cmd}")
-            self.serial.write(self.cmd)
+            #self.serial.write(self.cmd)
         except Exception as e:
             show_error(e)
         
@@ -61,11 +61,11 @@ class ModBusRelay():
             self.cmd[3] = int(format(id, '#04x'), 16)
             self.cmd[4] = self.status  #Relay Flip
             self.cmd[5] = 0
-            print(self.cmd)
             self.crc = pycrc.ModbusCRC(self.cmd[0:6])
             self.cmd[6] = self.crc & 0xFF
             self.cmd[7] = self.crc >> 8
-            self.serial.write(self.cmd)
+            print(self.cmd)
+            #self.serial.write(self.cmd)
         except Exception as e:
             show_error(e)
     
@@ -92,7 +92,6 @@ class TestConsumer(WebsocketConsumer):
         super().__init__(*args, **kwargs)
         self.running = False
         self.modbus = ModBusRelay()
-        self.serial = serial.Serial("/dev/ttyS0",9600,timeout=1)
         self.progress = 0
         
     def connect(self):
@@ -138,10 +137,13 @@ class TestConsumer(WebsocketConsumer):
             if type == "Konfig-File":
                 print("Konfig-File recieved")
                 konfig = text_data_json["text"]
-                f = open("komp_pruefstand/static/Komponenten/Konfig.txt", "w")
-                f.write(konfig)
-                self.check_konfig_file()
-                f.close()
+                try:
+                    f = open("komp_pruefstand/static/Komponenten/Konfig.txt", "w")
+                    f.write(konfig)
+                    f.close()
+                    self.check_konfig_file()
+                except Exception as e:
+                    show_error(e)
                 #print(konfig)
             if type == "stop":
                 print("stop")
@@ -173,14 +175,51 @@ class TestConsumer(WebsocketConsumer):
             show_error(e)
 
     def check_konfig_file(self):
-        with open(f"komp_pruefstand/static/Komponenten/Konfig.txt", "r") as konfig:
-            print("HHH")
-            for line in konfig:
-                print(line.rstrip())
-            
-            # for name in self.modbus.cons:
-            #     if name in konfig.readlines():
-            #         print(name)
+        self._send('Upload erfolgreich', 0)
+        with open(f"komp_pruefstand/static/Komponenten/Komponenten.yaml", "r") as y:
+            with open(f"komp_pruefstand/static/Komponenten/Konfig.txt", "r") as t:
+                konfig = yaml.safe_load(y)
+                cons = list(konfig.keys())
+                p = t.readlines()
+                relays = {}
+                for key in cons:
+                    relays[key] = None
+                for line in p:
+                    string = line.rstrip()
+                    relay = []
+                    comp = [x.strip() for x in string.split(':', line.find(':'))]
+                    komma = line.find(",")
+                    if comp[0] == 'Range Ext' or comp[0] == 'RangeExt':
+                        comp[0] = 'Range EXT'
+                    if komma != -1:
+                        variants = [''] * len(konfig[comp[0]])
+                        choices = [x.strip() for x in comp[1].split(',', comp[1].find(','))]
+                        comp = comp[0]
+                        for i in range(len(konfig[comp])):
+                            variants[i] = konfig[comp][i]['name']   #Array mit Namen der Unterkomponenten, von Komp, wo Aushwahl > 1
+                        print(f'\nAnzahl Wahl {comp}: {len(choices)}')
+                        odds = []
+                        for name in range(len(choices)):
+                            if choices[name].strip() not in variants:
+                                odds.append((choices[name].strip()))
+                        if len(odds) > 1:
+                            num = 'sind'
+                        else:
+                            num = 'ist'
+                        print(f'Davon {num} aber nur {len(choices) - len(odds)} gültig.')
+                        print(f'{comp} {odds} {num} ungültig')
+                        for i in range(len(choices)):
+                            for index in range(len(konfig[comp])):
+                                k = konfig[comp][index]['name']
+                                if k == choices[i].strip():
+                                    relay.append((konfig[comp][index]["relay"]))
+                                    print(f'{comp}, {choices[i]} hat Relay: {konfig[comp][index]["relay"]}')
+                        relay.sort()
+                        relays[comp] = relay
+                    elif comp[1] != 'None':
+                        relays[comp[0]] = [(konfig[comp[0]][0]["relay"])]
+                        print(f'{comp[0]}, {comp[1]} hat Relay: {konfig[comp[0]][0]["relay"]}')
+                print(f'Relays zu schalten: {relays}')
                 
     def stop(self):
         self.running = False

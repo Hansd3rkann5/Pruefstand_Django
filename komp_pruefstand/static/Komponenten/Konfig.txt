@@ -1,4 +1,4 @@
-Motor: HPR30
+Motor: HPR30, HPR50
 Display: small
 Battery: 320 kWh
 Charger: 1
