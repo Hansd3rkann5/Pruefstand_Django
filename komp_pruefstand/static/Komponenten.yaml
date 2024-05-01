@@ -17,6 +17,8 @@ Display:
     relay: 7
   - name: black/white
     relay: 8
+  - name: black/color
+    relay: 22
 
 Battery:
   - name: 320 kWh

@@ -1,13 +1,6 @@
-Motor: HPR30
+Motor: HPR30, HPR50
 Display: small
 Battery: 320 kWh
-Charger: 1
+Charger: 1, 2
 Range EXT: 50 kWh
 Service Dongle: 2
-
-Motor: HPR50+
-Display: small
-Battery: 320 kWh
-Charger: 1
-Range EXT: 50 kWh
-Service Dongle: 3
