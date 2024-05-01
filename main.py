@@ -4,7 +4,7 @@ import serial
 import pycrc
 import time
 
-s = serial.Serial("/dev/ttyS0",115200,timeout=1)    
+s = serial.Serial("/dev/ttyS0",9600,timeout=1)    
 cmd = [0, 0, 0, 0, 0, 0, 0, 0]
 
 cmd[0] = 0x01  #Device address
