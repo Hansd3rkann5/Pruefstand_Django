@@ -47,7 +47,7 @@ CRCTableLow = [
 
 def ModbusCRC(data):
     crcHigh = 0xff;
-    crcLow = 0xff; 
+    crcLow = 0xff;
     index = 0;
     for byte in data:
         index = crcLow ^ byte
