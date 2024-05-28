@@ -11,6 +11,8 @@ from pruefstand import pycrc
 from django.http import JsonResponse
 from threading import Thread
 from channels.generic.websocket import WebsocketConsumer
+from PCAN.libpcanbasic.examples.console.Python.ManualRead.ManualRead import ManualRead
+
 
 def show_error(exception):
     exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -48,6 +50,7 @@ class ModBusRelay():
         
     #Abspeichern der vom Client ausgewählten Komponenten in Array zum Setzen der Relais bei Test start
     def switch_relay(self, id):
+        """Diese Funktion macht irgendwas"""
         try:
             if id == None:
                 self.set[self.cons.index(type)] = None

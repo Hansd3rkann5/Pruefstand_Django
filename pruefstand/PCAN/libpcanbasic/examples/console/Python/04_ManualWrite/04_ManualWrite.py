@@ -112,11 +112,21 @@ class ManualWrite():
         """
         ## Sends a CAN message with extended ID, and 8 data bytes
         msgCanMessage = TPCANMsg()
-        msgCanMessage.ID = 0x100
+        msgCanMessage.ID = 0x0CF
         msgCanMessage.LEN = 8
         msgCanMessage.MSGTYPE = PCAN_MESSAGE_EXTENDED.value
+        msgCanMessage.DATA[0] = 0x03
+        msgCanMessage.DATA[3] = 0x00
+        msgCanMessage.DATA[4] = 0x00
+        msgCanMessage.DATA[7] = 0x00
+        msgCanMessage.DATA[4] = 0x03
+        msgCanMessage.DATA[0] = 0x03
+        msgCanMessage.DATA[0] = 0x03
+        msgCanMessage.DATA[0] = 0x03
+        print("herhe")
         for i in range(8):
             msgCanMessage.DATA[i] = i
+            print(i)
             pass
         return self.m_objPCANBasic.Write(self.PcanHandle, msgCanMessage)
 
@@ -129,7 +139,7 @@ class ManualWrite():
         """
         ## Sends a CAN-FD message with standard ID, 64 data bytes, and bitrate switch
         msgCanMessageFD = TPCANMsgFD()
-        msgCanMessageFD.ID = 0x100
+        msgCanMessageFD.ID = 0x0Cf
         msgCanMessageFD.DLC = 15
         msgCanMessageFD.MSGTYPE = PCAN_MESSAGE_FD.value | PCAN_MESSAGE_BRS.value
         for i in range(64):

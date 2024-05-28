@@ -5,6 +5,20 @@ import struct
 import crc16 as c16
 from crc import *
 
+NODE_ADRESSES = {
+'MOTORSTEUERUNG'      : 0x1,
+'SCHIEBEHILFEGERAET'  : 0xF,
+'BMS'                 : 0x10,
+'LADEPORT'            : 0x12,
+'DISPLAY'             : 0x15,
+'LICHT'               : 0x20,
+'ECONNECT'            : 0x25,
+'GPSTUNER'            : 0x2A,
+'SERVICEMODUL'        : 0x3D,
+'ENTWICKLUNGSTOOLS'   : 0x3E
+}
+for key in NODE_ADRESSES:
+    print(key, hex(NODE_ADRESSES[key]))
 
 class crc:
 
@@ -438,7 +452,7 @@ config = Configuration(
 )
 
 config = Configuration(width=16, polynomial=11021, init_value=0, final_xor_value=65535, reverse_input=False, reverse_output=False)
-print(hex(Calculator(config).checksum(bytes(cmd))))
+#print(hex(Calculator(config).checksum(bytes(cmd))))
 
 crc16,tbl = crcmod.mkCrcFun(0x11021, rev=False, initCrc=0xFFFF)
 #print(hex(crc16("0x0371000000".encode(), table= struct.pack(_sizeToTypeCode[16], *CRCTable))))
@@ -460,14 +474,14 @@ def crc16(data: bytes):
         crc &= 0xFFFF                                   # important, crc must stay 16bits all the way through
     return crc
   
-print(hex(crc16(cmd)))
+#print(hex(crc16(cmd)))
 #print(c16.crc16xmodem(b'1101110001000000000000000000000000'))
 
 crccalc = crc()
 crccalc.setCRCccitt()
 crccalc.data = b'01011' 
 #crccalc.compute()
-print(crccalc.result)
+#print(crccalc.result)
 
 my_hexdata = "1a"
 
@@ -475,4 +489,4 @@ scale = 16 ## equals to hexadecimal
 
 num_of_bits = 10
 
-print(bin(int(my_hexdata, scale))[2:].zfill(num_of_bits))
+#print(bin(int(my_hexdata, scale))[2:].zfill(num_of_bits))
