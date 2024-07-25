@@ -1,6 +1,10 @@
 ## Needed Imports
 from PCANBasic import *
 import os
+import crc16
+import time
+import crcmod.predefined
+from binascii import unhexlify
 import sys
 
 class ManualWrite():
@@ -35,6 +39,11 @@ class ManualWrite():
         """
         Create an object starts the programm
         """
+        self.strung = ''
+        self.crc = list('0300000000')
+        self.msgCanMessage = TPCANMsg()
+        self.msgCanMessage.LEN = 8
+        self.msgCanMessage.MSGTYPE = PCAN_MESSAGE_EXTENDED.value
         self.ShowConfigurationHelp() ## Shows information about this sample
         self.ShowCurrentConfiguration() ## Shows the current parameters configuration
 
@@ -66,9 +75,29 @@ class ManualWrite():
         print("Successfully initialized.")
         self.getInput("Press <Enter> to write...")
         strinput = "y"
+        p = 1
+        self.clear()
         while strinput == "y":
-            self.clear()
-            self.WriteMessages()
+            for i in range(0, 1, 1):
+                for j in range(256):
+                    self.crc[4:6] = hex(i)[2:].zfill(2).upper()
+                    self.crc[2:4] = hex(j)[2:].zfill(2).upper()
+                    s = unhexlify(self.strung.join(self.crc))
+                    crc16 = crcmod.predefined.Crc('X25')
+                    crc16.update(s)
+                    self.crc[10:12] = crc16.hexdigest()[:2]
+                    self.crc[12:14] = crc16.hexdigest()[2:]
+                    self.crc[14:16] = '00'
+                    self.strung = self.strung.join(self.crc)
+                    for r in range(1, 9, 1): 
+                        self.msgCanMessage.DATA[r-1] = int(hex(int(self.strung[r*2-2:r*2], 16)), 16)
+                        #print(msgCanMessage.DATA[r-1])
+                    print(f'{hex(self.msgCanMessage.DATA[0])} {hex(self.msgCanMessage.DATA[1])} {hex(self.msgCanMessage.DATA[2])} {hex(self.msgCanMessage.DATA[3])} {hex(self.msgCanMessage.DATA[4])} {hex(self.msgCanMessage.DATA[5])} {hex(self.msgCanMessage.DATA[6])} {hex(self.msgCanMessage.DATA[7])} ')
+                    stsResult = self.m_objPCANBasic.Write(self.PcanHandle, self.msgCanMessage)
+                    self.strung=''
+                    self.crc = list('0300000000')
+                    time.sleep(0.05)
+                break
             strinput = self.getInput("Do you want to write again? yes[y] or any other key to exit...", "y")
             strinput = chr(ord(strinput))
 
@@ -88,7 +117,7 @@ class ManualWrite():
 
     # Main-Functions
     #region
-    def WriteMessages(self):
+    def WriteMessages(self, strung):
         '''
         Function for writing PCAN-Basic messages
         '''
@@ -103,7 +132,7 @@ class ManualWrite():
         else:
             print("Message was successfully SENT")
 
-    def WriteMessage(self):
+    def WriteMessage(self, id, data):
         """
         Function for writing messages on CAN devices
 
@@ -111,24 +140,52 @@ class ManualWrite():
             A TPCANStatus error code
         """
         ## Sends a CAN message with extended ID, and 8 data bytes
-        msgCanMessage = TPCANMsg()
-        msgCanMessage.ID = 0x0CF
-        msgCanMessage.LEN = 8
-        msgCanMessage.MSGTYPE = PCAN_MESSAGE_EXTENDED.value
-        msgCanMessage.DATA[0] = 0x03
-        msgCanMessage.DATA[3] = 0x00
-        msgCanMessage.DATA[4] = 0x00
-        msgCanMessage.DATA[7] = 0x00
-        msgCanMessage.DATA[4] = 0x03
-        msgCanMessage.DATA[0] = 0x03
-        msgCanMessage.DATA[0] = 0x03
-        msgCanMessage.DATA[0] = 0x03
-        print("herhe")
-        for i in range(8):
-            msgCanMessage.DATA[i] = i
-            print(i)
-            pass
-        return self.m_objPCANBasic.Write(self.PcanHandle, msgCanMessage)
+        self.msgCanMessage.ID = id
+        self.msgCanMessage.DATA = data
+        return self.m_objPCANBasic.Write(self.PcanHandle, self.msgCanMessage)
+        for i in range(0, 2, 1):
+            for j in range(256):
+                crc[4:6] = hex(i)[2:].zfill(2).upper()
+                crc[2:4] = hex(j)[2:].zfill(2).upper()
+                s = unhexlify(strung.join(crc))
+                crc16 = crcmod.predefined.Crc('X25')
+                crc16.update(s)
+                crc[10:12] = crc16.hexdigest()[:2]
+                crc[12:14] = crc16.hexdigest()[2:]
+                crc[14:16] = '00'
+                print(strung.join(crc))
+                strung = strung.join(crc)
+                for r in range(1, 9, 1): 
+                    msgCanMessage.DATA[r-1] = int(hex(int(strung[r*2-2:r*2], 16)), 16)
+                    #print(msgCanMessage.DATA[r-1])
+                print(f'{msgCanMessage.DATA[0]} {msgCanMessage.DATA[1]} {msgCanMessage.DATA[2]} {msgCanMessage.DATA[3]} {msgCanMessage.DATA[4]} {msgCanMessage.DATA[5]} {msgCanMessage.DATA[6]} {msgCanMessage.DATA[7]} ')
+                return self.m_objPCANBasic.Write(self.PcanHandle, msgCanMessage)
+                #print(f'{strung[:2]} {strung[2:4]} {strung[4:6]} {strung[6:8]} {strung[8:10]} {strung[10:12]} {strung[12:14]} {strung[14:]}')
+        # for r in range(1, 9, 1): 
+        #     msgCanMessage.DATA[i-1] = int(hex(int(strung[r*2-2:r*2], 16)), 16)
+        #     pass
+        # print(msgCanMessage.DATA)
+        # return self.m_objPCANBasic.Write(self.PcanHandle, msgCanMessage)
+    
+    def check_sum(self):
+        strung = ''
+        crc = list('0300000000')
+        for i in range(0, 2, 1):
+            for j in range(256):
+                crc[4:6] = hex(i)[2:].zfill(2).upper()
+                crc[2:4] = hex(j)[2:].zfill(2).upper()
+                #strung+='0' + str(crc[0]) + str(crc[1]) + str(crc[2]) + '0' + str(crc[3]) + '0' + str(crc[4])
+                s = unhexlify(strung.join(crc))
+                crc16 = crcmod.predefined.Crc('X25')
+                crc16.update(s)
+                crc[10:12] = crc16.hexdigest()[:2]
+                crc[12:14] = crc16.hexdigest()[2:]
+                crc[14:16] = '00'
+                strung = strung.join(crc)
+                return strung
+                print(f'{strung[:2]} {strung[2:4]} {strung[4:6]} {strung[6:8]} {strung[8:10]} {strung[10:12]} {strung[12:14]} {strung[14:]}')
+                strung=''
+                crc = list('0300000000')
 
     def WriteMessageFD(self):
         """

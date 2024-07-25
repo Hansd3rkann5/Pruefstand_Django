@@ -1,55 +1,89 @@
 Motor:
-  - name: HPR30
+  - name: HPR50S
+    SN: '329587.0104'
     relay: 1
-  - name: HPR50
+  - name: HPR50S
+    SN: '329587.0104'
     relay: 2
-  - name: HPR50+
+  - name: HPR50HP
+    SN: '358292.0100'
     relay: 3
-  - name: HPR50 light
+  - name: HPR40
+    SN: null
     relay: 4
+  - name: HPR60
+    SN: null
+    relay: 5
+  - name: null
+    SN: null
+    relay: 6
+  - name: Testmotor
+    SN: null
+    relay: 7
 
 Display:
-  - name: small
-    relay: 5
-  - name: big
-    relay: 6
-  - name: color
-    relay: 7
-  - name: black/white
+  - name: TQ
+    SN: '329589.0200'
     relay: 8
-  - name: black/color
-    relay: 22
+  - name: Trek
+    SN: '334496.0200'
+    relay: 9
+  - name: Barend
+    SN: '329589.0200'
+    relay: 10
+  - name: IOT
+    SN: null
+    relay: 11
+  - name: Full Color
+    SN: null
+    relay: 12
+  - name: null
+    SN: null
+    relay: 13
 
 Battery:
-  - name: 320 kWh
-    relay: 9
-  - name: 250 kWh
-    relay: 10
-  - name: 400 kWh
-    relay: 11
-  - name: 350 kWh
-    relay: 12
-
-Charger:
-  - name: "1"
-    relay: 13
-  - name: "2"
+  - name: 360er
+    SN: null
     relay: 14
-  - name: "3"
+  - name: 360er
+    SN: null
     relay: 15
-  - name: "4"
+  - name: 360er
+    SN: null
     relay: 16
+  - name: 250er
+    SN: null
+    relay: 17
+  - name: 290er
+    SN: null
+    relay: 18
+  - name: 580er
+    SN: null
+    relay: 19
+  - name: null
+    SN: null
+    relay: 20
+
+Smartbox:
+  - name: '334500.0100'
+    relay: 21
+  - name: '334500.0300'
+    relay: 22
+  - name: null
+    relay: 23
 
 "Range EXT":
-  - name: 20 kWh
-    relay: 17
-  - name: 50 kWh
-    relay: 18
+  - name: '329592.0101'
+    relay: 24
+  - name: null
+    relay: 25
 
-"Service Dongle":
-  - name: "1"
-    relay: 19
-  - name: "2"
-    relay: 20
-  - name: "3"
-    relay: 21
+"Ladegerät/Service Dongle":
+  - name: '334498.0101'
+    relay: 26
+  - name: '334498.0103'
+    relay: 27
+  - name: null
+    relay: 28
+  - name: 'Service Dongle'
+    relay: 29

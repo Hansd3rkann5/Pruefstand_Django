@@ -4,10 +4,6 @@ import crcmod.predefined
 from binascii import unhexlify
 
 strung = ''
-s = unhexlify('03FE020000')
-crc16 = crcmod.predefined.Crc('X25')
-crc16.update(s)
-print(crc16.hexdigest())
 crc = list('0300000000')
 for i in range(0, 2, 1):
     for j in range(256):
@@ -17,14 +13,15 @@ for i in range(0, 2, 1):
         s = unhexlify(strung.join(crc))
         crc16 = crcmod.predefined.Crc('X25')
         crc16.update(s)
-        #print(strung.join(crc))
-        #print(crc16.hexdigest())
-        #time.sleep(0.5)
         crc[10:12] = crc16.hexdigest()[:2]
         crc[12:14] = crc16.hexdigest()[2:]
         crc[14:16] = '00'
-        print(strung.join(crc))
-        #time.sleep(1)
+        strung = strung.join(crc)
+        for r in range(1, 9, 1):
+            print(hex(int(strung[r*2-2:r*2], 16))[2:], sep=' ', end='', flush=True)
+            time.sleep(0.5)
+        print('')
+        #print(f'{strung[:2]} {strung[2:4]} {strung[4:6]} {strung[6:8]} {strung[8:10]} {strung[10:12]} {strung[12:14]} {strung[14:]}')
+        #print('\n')
         strung=''
         crc = list('0300000000')
-
