@@ -7,6 +7,7 @@ import time
 import yaml
 import numpy as np
 import itertools
+import re
 from pruefstand import pycrc
 from enum import Enum
 from django.http import JsonResponse
@@ -24,14 +25,14 @@ def show_error(exception):
 class ModBusRelay():
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.serial = serial.Serial("/dev/ttyS0",9600,timeout=1)    
-        self.cmd = [0x01, 0x05, 0, 0, 0, 0, 0, 0]
-        self.comps = ["Motor", "Display", "Battery", "Charger", "Range EXT", "Service Dongle"]
+        self.serial = serial.Serial("/dev/ttyS0",9600,timeout=1)    #Definierung des Ausgangs und der Baudrate fuer Bus
+        self.cmd = [0x01, 0x05, 0, 0, 0, 0, 0, 0]   #Array fuer RS485-Nachricht
+        self.comps = ["Motor", "Display", "Battery", "Charger", "Range EXT", "Service Dongle"]  #Array mit Strings der Komponenten
         self.config = yaml.safe_load(open(f"komp_pruefstand/static/Komponenten.yaml", "r"))
-        self.set:list[int | None] = [None] * 6
-        self.on = 0xFF
-        self.off = 0x00
-        self.flip = 0x55
+        self.set:list[int | None] = [None] * 6  #Leerer Array zum abspeichern der zu schaltenden Relais
+        self.on = 0xFF          #Byte zum Einschalten der Relais
+        self.off = 0x00         #Byte zum Ausschalten der Relais
+        self.flip = 0x55         #Byte fuer einen Flip des Relais (on <-> off)
         self.progress = 0
         
     # All relays off: 01 05 00 FF 00 00 FD FA
@@ -97,7 +98,7 @@ class ModBusRelay():
             show_error(e)
     
     #
-    def set_comp(self):
+    def set_relays(self):
         """
         Function for setting the desired Component
         """
@@ -123,6 +124,7 @@ class TestConsumer(WebsocketConsumer):
         super().__init__(*args, **kwargs)
         self.running = False
         self.modbus = ModBusRelay()
+        self.read = ManualRead()
         self.progress = 0
         self.combinations:list[int | None] = []
         self.konfig = ()
@@ -187,8 +189,6 @@ class TestConsumer(WebsocketConsumer):
                 print("set konfig")
                 combinations = text_data_json["comb"]
                 self.set_Relay(combinations)
-            if type == "set_comb_manu":
-                print("set combination manu")
             if type == "Konfig-File":
                 print("Konfig-File recieved")
                 self.home = True
@@ -220,31 +220,38 @@ class TestConsumer(WebsocketConsumer):
     
     def run_demo(self):
         for x in range(1, 101):
-            time.sleep(0.02)
+            time.sleep(0.1)
             self._send("progress", x)
     
     def send_progress(self):
-        if self.test == "manuell_comp":
-            print(self.combinations)
-            self._send("combinations", [self.combinations])
-            self.modbus.set_comp()
-            self.run_demo()
-            time.sleep(1)
-            self._send("done", None)
-            #self.modbus.reset_all()
-        if self.test == "auto":
-            self.run_demo()
-        if self.test == "manuell_konfig":
-            self.run_demo()
-            self._send("next", None)
+        x = Thread(target = self.run_demo, name="runlocalscript")
+        try:
+            if self.test == "auto" or self.test == "manuell_comp":
+                print("reading")
+                x.start()
+                all = self.read.read()
+                for prio in all:
+                    if prio != 'No Match':
+                        print(prio)
+                        for node in all[prio]:
+                            print(node, all[prio][node])
+                        print("\n")
+                    else:
+                        print(prio, all[prio])
+            if self.test == "manuell_konfig":
+                x.start()
+                all = self.read.read()
+                self._send("next", None)
+        except Exception as e:
+            show_error(e)
     
     def set_Relay(self, combinations):
         comb = []
         try:
             with open(f"komp_pruefstand/static/Komponenten.yaml", "r") as f:
                 data = yaml.safe_load(f)
-                # for combination in combinations:
-                #     print(combination)
+                for combination in combinations:
+                    print(combination)
                 for combination in combinations:
                     for index, name in enumerate(data):
                         #print(num, index, name)
@@ -256,7 +263,6 @@ class TestConsumer(WebsocketConsumer):
                     comb = []
                     #comb = []
             self._send("combinations", self.combinations)
-            self.test = "auto"
             self.run_combinations()
             print('Alle Kombinatoriken geschalten')
         except Exception as e:
@@ -341,46 +347,73 @@ class TestConsumer(WebsocketConsumer):
             komma = line.find(",")
             if comp[0] == 'Range Ext' or comp[0] == 'RangeExt':
                 comp[0] = 'Range EXT'
+            if comp[0] == 'Ladegerät' or comp[0] == 'Service Dongle':
+                comp[0] = 'Ladegerät/Service Dongle'
             if komma != -1:
-                variants = [''] * len(konfig[comp[0]])
+                variants_name = [''] * len(konfig[comp[0]])
+                variants_serial = [''] * len(konfig[comp[0]])
                 choices = [x.strip() for x in comp[1].split(',')]
                 if comp[0] == 'Battery' or comp[0] == 'Range EXT':
                     choices = self.check_kWh(choices)
+                choices = list(set(choices))
                 comp = comp[0]
                 for i in range(len(konfig[comp])):
-                    variants[i] = konfig[comp][i]['name']   #Array mit Namen der Unterkomponenten, von Komp, wo Auswahl > 1
+                    variants_name[i] = konfig[comp][i]['name']   #Array mit Namen der Unterkomponenten, von Komp, wo Auswahl > 1
+                    variants_serial[i] = konfig[comp][i]['serial']   #Array mit Namen der Unterkomponenten, von Komp, wo Auswahl > 1
                 print(f'Anzahl Wahl {comp}: {len(choices)}')
                 odds = []
                 for name in range(len(choices)):
-                    if choices[name].strip() not in variants:
+                    if choices[name].strip() not in variants_name and choices[name].strip() not in variants_serial:
                         odds.append((choices[name].strip()))
-                if len(odds) <= 1:
-                    num = 'sind'
-                    num1 = 'ist'
-                else:
-                    num = 'ist'
-                    num1 = 'sind'
                 if len(odds) != 0:
+                    if len(odds) <= 1:
+                        num = 'sind'
+                        num1 = 'ist'
+                    else:
+                        num = 'ist'
+                        num1 = 'sind'
                     print(f'Davon {num} aber nur {len(choices) - len(odds)} gültig.')
                     print(f'{comp} {odds} {num1} ungültig')
                     odds.append(comp)
                     self._send("odds", odds)
+                f = {'name': [], 'serial': []}
+                for index in range(len(konfig[comp])):
+                    f['name'].append(konfig[comp][index]['name'])
+                    f['serial'].append(konfig[comp][index]['serial'])
                 for i in range(len(choices)):
+                    double_serial, double_name = False, False
                     for index in range(len(konfig[comp])):
-                        k = konfig[comp][index]['name']
-                        if k == choices[i].strip():
+                        n = str(konfig[comp][index]['name'])
+                        s = konfig[comp][index]['serial']
+                        nc = f['name'].count(choices[i].strip())
+                        sc = f['serial'].count(choices[i].strip())
+                        if n == choices[i].strip() and not double_name:
                             relay.append((konfig[comp][index]["relay"]))
                             print(f'{comp}, {choices[i]} hat Relay: {konfig[comp][index]["relay"]}')
+                            if nc > 1:
+                                double_name = True
+                                break
+                        if s == choices[i].strip() and not double_serial:
+                            relay.append((konfig[comp][index]["relay"]))
+                            print(f'{comp}, {choices[i]} hat Relay: {konfig[comp][index]["relay"]}')
+                            if sc > 1:
+                                double_serial = True
+                                break
                 relay.sort()
-                relays[comp] = relay
+                relays[comp] = set(relay)
             elif comp[1] != 'None':
                 if comp[0] == 'Battery' or comp[0] == 'Range EXT':
                     comp[1] = self.check_kWh(comp[1])
+                if comp[0] == 'Ladegerät' or comp[0] == 'Service Dongle':
+                    comp[0] = 'Ladegerät/Service Dongle'
                 for name in konfig[comp[0]]:
-                    if name['name'] == comp[1]:
+                    if str(name['name']) == comp[1]:
+                        r = name['relay']
+                    if name['serial'] == comp[1]:
                         r = name['relay']
                 relays[comp[0]] = [r]
                 print(f'{comp[0]}, {comp[1]} hat Relay: {r}')
+                r = None
         print(f'Relays zu schalten: {relays}\n')
         l = []
         for key in relays:
@@ -397,11 +430,9 @@ class TestConsumer(WebsocketConsumer):
         individual combination in the list of all possible combinations. It also sends the current number of the running combination to the client
         for displaying it to the user.
         """
-        if self.test == "auto":
+        if self.test == "auto" or self.test == "manuell_comp":
             for index, combination in enumerate(self.combinations, start=1):
-                print(f'Combination: {index}')
-                print(self.combinations)
-                #time.sleep(1)
+                print(f'Combination: {index}: {combination}')
                 self._send("testnum", index)
                 for rel in range(len(combination)):
                     if combination[rel] != None:
@@ -415,7 +446,6 @@ class TestConsumer(WebsocketConsumer):
             if self.index != len(self.combinations) + 1:
                 print("break")
                 combination = self.combinations[self.index - 1]
-                print(self.combinations)
                 print(f'Combination: {self.index}')
                 self._send("testnum", self.index)
                 for rel in range(len(combination)):
@@ -444,21 +474,31 @@ class TestConsumer(WebsocketConsumer):
         if type(choices) != str:
             for ind, choice in enumerate(choices):
                 t = choice[-4:]
-                if choice[-4:] != ' kWh':
-                    k = choice.find('k')
-                    #print(f'Index of k: {battery.find("k")}')
-                    choice = choice[:k] + ' ' + choice[k:]
-                    choices[ind] = choice
+                serial = bool(re.search(r'\d', t))
+                if not serial:
+                    if t != ' kWh':
+                        k = choice.find('k')
+                        #print(f'Index of k: {battery.find("k")}')
+                        choice = choice[:k] + ' ' + choice[k:]
+                        choices[ind] = choice
         else:
             x = choices[-4:]
-            if choices[-4:] != ' kWh':
-                k = choices.find('k')
-                #print(f'Index of k: {choices.find("k")}')
-                choices = choices[:k] + ' ' + choices[k:]
+            serial = bool(re.search(r'\d', x))
+            if not serial:
+                if x != ' kWh':
+                    k = choices.find('k')
+                    #print(f'Index of k: {choices.find("k")}')
+                    choices = choices[:k] + ' ' + choices[k:]
         return choices
+    
+    def read_bus(self):
+        self.read.read()
 
     def stop(self):
         self.running = False
         
-#Thomas Zengerle
-#Matthias Schoppe
+#Thomas Zengerle -> kabel
+#Matthias Schoppe -> can
+#Kundennummer inning 3006166
+#Buchungsnummer: P/00026620/000002 --> PSP Element bei BANF
+#Manuela Kabelbaum Bestellung mit PSP Element

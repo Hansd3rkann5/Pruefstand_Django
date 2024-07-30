@@ -1,98 +1,99 @@
 Motor:
   - name: HPR50S
-    SN: '329587.0104'
+    serial: '329587.0104'
     relay: 1
   - name: HPR50S
-    SN: '329587.0104'
+    serial: '329587.0104'
     relay: 2
   - name: HPR50HP
-    SN: '358292.0100'
+    serial: '358292.0100'
     relay: 3
   - name: HPR40
-    SN: null
+    serial: null
     relay: 4
   - name: HPR60
-    SN: null
+    serial: null
     relay: 5
   - name: null
-    SN: null
+    serial: null
     relay: 6
   - name: Testmotor
-    SN: null
+    serial: null
     relay: 7
 
 Display:
   - name: TQ
-    SN: '329589.0200'
+    serial: '329589.0200'
     relay: 8
   - name: Trek
-    SN: '334496.0200'
+    serial: '334496.0200'
     relay: 9
   - name: Barend
-    SN: '329589.0200'
+    serial: '329589.0200'
     relay: 10
   - name: IOT
-    SN: null
+    serial: null
     relay: 11
   - name: Full Color
-    SN: null
+    serial: null
     relay: 12
   - name: null
-    SN: null
+    serial: null
     relay: 13
 
 Battery:
-  - name: 360er
-    SN: null
+  - name: 360
+    serial: null
     relay: 14
-  - name: 360er
-    SN: null
+  - name: 360
+    serial: null
     relay: 15
-  - name: 360er
-    SN: null
+  - name: 360
+    serial: null
     relay: 16
-  - name: 250er
-    SN: null
+  - name: 250
+    serial: null
     relay: 17
-  - name: 290er
-    SN: null
+  - name: 290
+    serial: null
     relay: 18
-  - name: 580er
-    SN: null
+  - name: 580
+    serial: null
     relay: 19
   - name: null
-    SN: null
+    serial: null
     relay: 20
 
 Smartbox:
   - name: null
-    SN: '334500.0100'
+    serial: '334500.0100'
     relay: 21
   - name: null
-    SN: '334500.0300'
+    serial: '334500.0300'
     relay: 22
   - name: null
-    SN: null
+    serial: null
     relay: 23
 
 "Range EXT":
   - name: null
-    SN: '329592.0101'
+    serial: '329592.0101'
     relay: 24
   - name: null
-    SN: null
+    serial: null
     relay: 25
 
 "Ladegerät/Service Dongle":
   - name: 'Ladegerät'
-    SN: '334498.0101'
+    serial: '334498.0101'
     relay: 26
   - name: 'Ladegerät'
-    SN: '334498.0103'
+    serial: '334498.0103'
     relay: 27
   - name: null
-    SN: null
+    serial: null
     relay: 28
   - name: 'Service Dongle'
-    SN: null
+    serial: null
     relay: 29
+

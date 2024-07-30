@@ -76,6 +76,7 @@ class ManualWrite():
         self.getInput("Press <Enter> to write...")
         strinput = "y"
         p = 1
+        by = []
         self.clear()
         while strinput == "y":
             for i in range(0, 1, 1):
@@ -91,12 +92,14 @@ class ManualWrite():
                     self.strung = self.strung.join(self.crc)
                     for r in range(1, 9, 1): 
                         self.msgCanMessage.DATA[r-1] = int(hex(int(self.strung[r*2-2:r*2], 16)), 16)
+                        by.append(hex(int(self.strung[r*2-2:r*2], 16)))
                         #print(msgCanMessage.DATA[r-1])
-                    print(f'{hex(self.msgCanMessage.DATA[0])} {hex(self.msgCanMessage.DATA[1])} {hex(self.msgCanMessage.DATA[2])} {hex(self.msgCanMessage.DATA[3])} {hex(self.msgCanMessage.DATA[4])} {hex(self.msgCanMessage.DATA[5])} {hex(self.msgCanMessage.DATA[6])} {hex(self.msgCanMessage.DATA[7])} ')
+                    print(f'0{by[0][2:]} {by[1][2:]} 0{by[2][2:]} 0{by[3][2:]} 0{by[4][2:]} {by[5][2:]} {by[6][2:]} 0{by[7][2:]} ')
                     stsResult = self.m_objPCANBasic.Write(self.PcanHandle, self.msgCanMessage)
                     self.strung=''
                     self.crc = list('0300000000')
                     time.sleep(0.05)
+                    by = []
                 break
             strinput = self.getInput("Do you want to write again? yes[y] or any other key to exit...", "y")
             strinput = chr(ord(strinput))
