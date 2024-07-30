@@ -144,6 +144,7 @@ class TestConsumer(WebsocketConsumer):
         self.modbus.reset_all()
         self.send_master()
         self.test = ''
+        #self.test = []
         self.combinations = []
         self.index = 1
         
@@ -169,22 +170,32 @@ class TestConsumer(WebsocketConsumer):
                 self.home = True
                 self.reset_vars()
                 self.modbus.reset_all()
+            if type == "manuell_konfig":
+                print("Manueller Durchlauf der Kombinatoriken")
+                self.test = type
+                #self.test.append(type)
+                self._send(type, None)
+                print(self.test)
+            if type == "auto":
+                self.test = type
+                #self.test.append(type)
+                self._send(type, None)
+                print("Automatisierter Durchlauf")
+                print(self.test)
             if type == "konfig":
                 self.test = type
+                #self.test.append(type)
                 self._send(type, None)
                 print("Test über Konfig-File")
+                print(self.test)
             if type == "manuell_comp":
+                self.test = type
+                #self.test.append(type)
+                self._send(type, None)
                 print("Manuelle Komp. Auswahl")
-                self._send(type, None)
-                self.test = type
-            if type == "auto":
-                print("Automatisierter Durchlauf")
-                self.test = type
-                self._send(type, None)
-            if type == "manuell_konfig":
-                print("Manueller Durchlauf der Konfiguration")
-                self.test = type
-                self._send(type, None)
+                print(self.test)
+                if self.test[0] == "auto" and self.test[1] == "manuell_comp":
+                    print("yes")
             if type == "set_combinations":
                 print("set konfig")
                 combinations = text_data_json["comb"]
@@ -222,11 +233,13 @@ class TestConsumer(WebsocketConsumer):
         for x in range(1, 101):
             time.sleep(0.1)
             self._send("progress", x)
+        self._send("next", None)
     
     def send_progress(self):
         x = Thread(target = self.run_demo, name="runlocalscript")
         try:
             if self.test == "auto" or self.test == "manuell_comp":
+            #if self.test[0] == "auto" and self.test[1] == "manuell_comp":
                 print("reading")
                 x.start()
                 all = self.read.read()
@@ -356,9 +369,10 @@ class TestConsumer(WebsocketConsumer):
                 if comp[0] == 'Battery' or comp[0] == 'Range EXT':
                     choices = self.check_kWh(choices)
                 choices = list(set(choices))
+                #print(choices)
                 comp = comp[0]
                 for i in range(len(konfig[comp])):
-                    variants_name[i] = konfig[comp][i]['name']   #Array mit Namen der Unterkomponenten, von Komp, wo Auswahl > 1
+                    variants_name[i] = str(konfig[comp][i]['name'])   #Array mit Namen der Unterkomponenten, von Komp, wo Auswahl > 1
                     variants_serial[i] = konfig[comp][i]['serial']   #Array mit Namen der Unterkomponenten, von Komp, wo Auswahl > 1
                 print(f'Anzahl Wahl {comp}: {len(choices)}')
                 odds = []
@@ -378,7 +392,7 @@ class TestConsumer(WebsocketConsumer):
                     self._send("odds", odds)
                 f = {'name': [], 'serial': []}
                 for index in range(len(konfig[comp])):
-                    f['name'].append(konfig[comp][index]['name'])
+                    f['name'].append(str(konfig[comp][index]['name']))
                     f['serial'].append(konfig[comp][index]['serial'])
                 for i in range(len(choices)):
                     double_serial, double_name = False, False
@@ -474,21 +488,33 @@ class TestConsumer(WebsocketConsumer):
         if type(choices) != str:
             for ind, choice in enumerate(choices):
                 t = choice[-4:]
-                serial = bool(re.search(r'\d', t))
-                if not serial:
-                    if t != ' kWh':
+                #serial = bool(re.search(r'\d', t))
+                digit = bool(re.search(r'\d', t))
+                if not digit:
+                    if choice[-4:] != ' kWh':
                         k = choice.find('k')
                         #print(f'Index of k: {battery.find("k")}')
                         choice = choice[:k] + ' ' + choice[k:]
                         choices[ind] = choice
+                    # if t != ' kWh':
+                    #     k = choice.find('k')
+                    #     #print(f'Index of k: {battery.find("k")}')
+                    #     choice = choice[:k] + ' ' + choice[k:]
+                    #     choices[ind] = choice
         else:
             x = choices[-4:]
-            serial = bool(re.search(r'\d', x))
-            if not serial:
+            digit = bool(re.search(r'\d', x))
+            if not digit:
                 if x != ' kWh':
                     k = choices.find('k')
                     #print(f'Index of k: {choices.find("k")}')
                     choices = choices[:k] + ' ' + choices[k:]
+            # serial = bool(re.search(r'\d', x))
+            # if not serial:
+            #     if x != ' kWh':
+            #         k = choices.find('k')
+            #         #print(f'Index of k: {choices.find("k")}')
+            #         choices = choices[:k] + ' ' + choices[k:]
         return choices
     
     def read_bus(self):

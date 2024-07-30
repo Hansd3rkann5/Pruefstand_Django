@@ -1,6 +1,6 @@
-Battery: 360, 360, 250, 360
-Motor: 329587.0104, HPR50S, 329587.0104
+Battery: 360, 250, 290
+Motor: 329587.0104
 Display: TQ
-Smartbox: 334500.0100, 334500.0100
+Smartbox: 334500.0100
 Range EXT: 329592.0101
-Service Dongle: Service Dongle, 334498.0101
+Service Dongle: Service Dongle
