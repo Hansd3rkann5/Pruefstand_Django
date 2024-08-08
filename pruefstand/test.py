@@ -4,6 +4,7 @@ import crcmod.predefined
 from binascii import unhexlify
 
 strung = ''
+by = []
 crc = list('0300000000')
 for i in range(0, 2, 1):
     for j in range(256):
@@ -18,10 +19,11 @@ for i in range(0, 2, 1):
         crc[14:16] = '00'
         strung = strung.join(crc)
         for r in range(1, 9, 1):
-            print(hex(int(strung[r*2-2:r*2], 16))[2:], sep=' ', end='', flush=True)
-            time.sleep(0.5)
-        print('')
-        #print(f'{strung[:2]} {strung[2:4]} {strung[4:6]} {strung[6:8]} {strung[8:10]} {strung[10:12]} {strung[12:14]} {strung[14:]}')
+            by.append(hex(int(strung[r*2-2:r*2], 16)))
+        #print(f'0{by[0][2:]} {by[1][2:]} 0{by[2][2:]} 0{by[3][2:]} 0{by[4][2:]} {by[5][2:]} {by[6][2:]} 0{by[7][2:]} ')
+        time.sleep(0.1)
+        #print('')
+        print(f'{strung[:2]} {strung[2:4]} {strung[4:6]} {strung[6:8]} {strung[8:10]} {strung[10:12]} {strung[12:14]} {strung[14:]}')
         #print('\n')
         strung=''
         crc = list('0300000000')

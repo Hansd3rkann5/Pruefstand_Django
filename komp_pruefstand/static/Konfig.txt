@@ -1,6 +1,6 @@
-Battery: 360, 250, 290
+Battery: 360, 250
 Motor: 329587.0104
-Display: TQ
+Display: TQ, IOT, Full Color
 Smartbox: 334500.0100
 Range EXT: 329592.0101
 Service Dongle: Service Dongle

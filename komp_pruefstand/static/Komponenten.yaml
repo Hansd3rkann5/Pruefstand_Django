@@ -1,12 +1,12 @@
 Motor:
-  - name: HPR50S
-    serial: '329587.0104'
+  - name: HPR50
+    serial: "329587.0104"
     relay: 1
   - name: HPR50S
-    serial: '329587.0104'
+    serial: "329587.0104"
     relay: 2
   - name: HPR50HP
-    serial: '358292.0100'
+    serial: "358292.0100"
     relay: 3
   - name: HPR40
     serial: null
@@ -20,16 +20,15 @@ Motor:
   - name: Testmotor
     serial: null
     relay: 7
-
 Display:
   - name: TQ
-    serial: '329589.0200'
+    serial: "329589.0200"
     relay: 8
   - name: Trek
-    serial: '334496.0200'
+    serial: "334496.0200"
     relay: 9
   - name: Barend
-    serial: '329589.0200'
+    serial: "329589.0200"
     relay: 10
   - name: IOT
     serial: null
@@ -40,7 +39,6 @@ Display:
   - name: null
     serial: null
     relay: 13
-
 Battery:
   - name: 360
     serial: null
@@ -63,37 +61,33 @@ Battery:
   - name: null
     serial: null
     relay: 20
-
 Smartbox:
   - name: null
-    serial: '334500.0100'
+    serial: "334500.0100"
     relay: 21
   - name: null
-    serial: '334500.0300'
+    serial: "334500.0300"
     relay: 22
   - name: null
     serial: null
     relay: 23
-
-"Range EXT":
+Range EXT:
   - name: null
-    serial: '329592.0101'
+    serial: "329592.0101"
     relay: 24
   - name: null
     serial: null
     relay: 25
-
-"Ladegerät/Service Dongle":
-  - name: 'Ladegerät'
-    serial: '334498.0101'
+Ladegerät/Service Dongle:
+  - name: Ladegerät
+    serial: "334498.0101"
     relay: 26
-  - name: 'Ladegerät'
-    serial: '334498.0103'
+  - name: Ladegerät
+    serial: "334498.0103"
     relay: 27
   - name: null
     serial: null
     relay: 28
-  - name: 'Service Dongle'
+  - name: Service Dongle
     serial: null
     relay: 29
-

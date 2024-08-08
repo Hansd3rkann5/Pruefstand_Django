@@ -190,7 +190,7 @@ class ManualRead():
         logger.debug("Successfully initialized.")
         if interactive:
             self.getInput("Press <Enter> to read...")
-        #self.read()
+            self.read()
             
             
     def read(self):
@@ -203,8 +203,10 @@ class ManualRead():
             self.clear()
             self.ReadMessages(i)
         for message in self.messages:
-            #if message.node == 'SCHIEBEHILFEGERAET':
-            #logger.debug(message)
+            if message.node == 'SCHIEBEHILFEGERAET':
+                logger.debug(message.id_bits)
+                logger.debug(message.data)
+                logger.debug('----------------------')
             if message.node == 0:
                 self.all[message.prio]+=1
             else:

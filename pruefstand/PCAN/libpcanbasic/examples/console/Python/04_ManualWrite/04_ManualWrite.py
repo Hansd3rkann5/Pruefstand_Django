@@ -89,17 +89,23 @@ class ManualWrite():
                     self.crc[10:12] = crc16.hexdigest()[:2]
                     self.crc[12:14] = crc16.hexdigest()[2:]
                     self.crc[14:16] = '00'
-                    self.strung = self.strung.join(self.crc)
+                    self.strung = 'FE01000000000000'
                     for r in range(1, 9, 1): 
+                        self.msgCanMessage.ID = 1535
                         self.msgCanMessage.DATA[r-1] = int(hex(int(self.strung[r*2-2:r*2], 16)), 16)
                         by.append(hex(int(self.strung[r*2-2:r*2], 16)))
                         #print(msgCanMessage.DATA[r-1])
-                    print(f'0{by[0][2:]} {by[1][2:]} 0{by[2][2:]} 0{by[3][2:]} 0{by[4][2:]} {by[5][2:]} {by[6][2:]} 0{by[7][2:]} ')
+                    print(hex(self.msgCanMessage.ID))
+                    print(self.msgCanMessage)
+                    #print(f'0{by[0][2:]} {by[1][2:]} 0{by[2][2:]} 0{by[3][2:]} 0{by[4][2:]} {by[5][2:]} {by[6][2:]} 0{by[7][2:]} ')
+                    print('--------------------------')
                     stsResult = self.m_objPCANBasic.Write(self.PcanHandle, self.msgCanMessage)
                     self.strung=''
-                    self.crc = list('0300000000')
+                    #self.crc = list('0300000000')
                     time.sleep(0.05)
                     by = []
+                    self.crc = list('0300000000')                    
+                #self.crc[:2] = 
                 break
             strinput = self.getInput("Do you want to write again? yes[y] or any other key to exit...", "y")
             strinput = chr(ord(strinput))
@@ -127,7 +133,7 @@ class ManualWrite():
         if self.IsFD:
             stsResult = self.WriteMessageFD()
         else:
-            stsResult = self.WriteMessage()
+            stsResult = self.WriteMessage(self, '0x0cf')
 
         ## Checks if the message was sent
         if (stsResult != PCAN_ERROR_OK):
