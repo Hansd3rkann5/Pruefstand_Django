@@ -40,7 +40,8 @@ class ManualWrite():
         Create an object starts the programm
         """
         self.strung = ''
-        self.crc = list('0300000000')
+        #self.crc = list('0300000000')
+        self.crc = list('0140000000000000')
         self.msgCanMessage = TPCANMsg()
         self.msgCanMessage.LEN = 8
         self.msgCanMessage.MSGTYPE = PCAN_MESSAGE_EXTENDED.value
@@ -81,23 +82,24 @@ class ManualWrite():
         while strinput == "y":
             for i in range(0, 1, 1):
                 for j in range(256):
-                    self.crc[4:6] = hex(i)[2:].zfill(2).upper()
-                    self.crc[2:4] = hex(j)[2:].zfill(2).upper()
-                    s = unhexlify(self.strung.join(self.crc))
-                    crc16 = crcmod.predefined.Crc('X25')
-                    crc16.update(s)
-                    self.crc[10:12] = crc16.hexdigest()[:2]
-                    self.crc[12:14] = crc16.hexdigest()[2:]
-                    self.crc[14:16] = '00'
-                    self.strung = 'FE01000000000000'
-                    for r in range(1, 9, 1): 
-                        self.msgCanMessage.ID = 1535
-                        self.msgCanMessage.DATA[r-1] = int(hex(int(self.strung[r*2-2:r*2], 16)), 16)
-                        by.append(hex(int(self.strung[r*2-2:r*2], 16)))
+                    # self.crc[4:6] = hex(i)[2:].zfill(2).upper()
+                    # self.crc[2:4] = hex(j)[2:].zfill(2).upper()
+                    # s = unhexlify(self.strung.join(self.crc))
+                    # crc16 = crcmod.predefined.Crc('X25')
+                    # crc16.update(s)
+                    # self.crc[10:12] = crc16.hexdigest()[:2]
+                    # self.crc[12:14] = crc16.hexdigest()[2:]
+                    # self.crc[14:16] = '00'
+                    self.strung = '0410'
+                    self.msgCanMessage.ID = 1546
+                    for r in range(1, 3, 1): 
+                        self.msgCanMessage.DATA[r-1] = int(hex(int(self.strung[r*2-2:r*2], 16)),16)
+                    self.msgCanMessage.LEN = 2
+                    #     by.append(hex(int(self.strung[r*2-2:r*2], 16)))
                         #print(msgCanMessage.DATA[r-1])
                     print(hex(self.msgCanMessage.ID))
-                    print(self.msgCanMessage)
-                    #print(f'0{by[0][2:]} {by[1][2:]} 0{by[2][2:]} 0{by[3][2:]} 0{by[4][2:]} {by[5][2:]} {by[6][2:]} 0{by[7][2:]} ')
+                    #print(self.msgCanMessage)
+                    #print(f'0{by[0][1:]} {by[1][2:]} 0{by[2][2:]} 0{by[3][2:]} 0{by[4][2:]} {by[5][2:]} {by[6][2:]} 0{by[7][2:]} ')
                     print('--------------------------')
                     stsResult = self.m_objPCANBasic.Write(self.PcanHandle, self.msgCanMessage)
                     self.strung=''

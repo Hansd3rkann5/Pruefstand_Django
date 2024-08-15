@@ -9,8 +9,10 @@ import time
 import logging
 import crcmod.predefined
 from binascii import unhexlify
-import threading
+from threading import Thread
 import crc16
+import json
+
 
 
 
@@ -26,14 +28,15 @@ logger = logging.getLogger('my-logger')
 
 #Knotenadressen
 NODE_ADRESSES = {
-    'MOTORSTEUERUNG'      : 0x1,
-    'SCHIEBEHILFEGERAET'  : 0xF,
+    'MOTORSTEUERUNG'      : 0x01,
+    'SCHIEBEHILFEGERAET'  : 0x0F,
     'BMS'                 : 0x10,
     'LADEPORT'            : 0x12,
     'DISPLAY'             : 0x15,
     'LICHT'               : 0x20,
     'ECONNECT'            : 0x25,
     'GPSTUNER'            : 0x2A,
+    'SMARTBOX'            : 0x2E,
     'SERVICEMODUL'        : 0x3D,
     'ENTWICKLUNGSTOOLS'   : 0x3E
 }
@@ -41,8 +44,8 @@ NODE_ADRESSES = {
 #Prio1 Message-IDs
 P1_MESSAGE_IDS = {
     'P1_MSG_EMCYOFF'          : 0x0,
-    'P1_MSG_EMCY  '           : 0x1,
-    'P1_MSG_SYNC '            : 0x2,
+    'P1_MSG_EMCY'           : 0x1,
+    'P1_MSG_SYNC'            : 0x2,
     'P1_MSG_PRIO_BROADCAST'   : 0x3,
     'P1_MSG_REPLPD'           : 0x7,
     'P1_MSG_REPLSD'           : 0x8,
@@ -71,28 +74,34 @@ class Message():
         self.id = 'No Match'
         self.prio = 'No Match'
         self.data = GetDataString(msg.DATA,msg.MSGTYPE)
+        self.id_bits = 'No Match'
+        self.id_hex = 'No Match'
+        self.node_adress_bits = 'No Match'
+        self.node_adress_hex = 'No Match'
 
         if str(self.bits[:1]) == '0':
             self.prio = 'Prio1'
             self.id_bits = self.bits[1:5]
             self.id_hex = hex(int(self.id_bits, 2))
-            self.node_adress_hex = hex(int(self.bits[5:], 2))
+            self.node_adress_bits = self.bits[5:]
+            self.node_adress_hex = hex(int(self.node_adress_bits, 2))
             self.id = self.get_id(P1_MESSAGE_IDS, self.id_hex)
             self.node = self.get_node(self.node_adress_hex)
-        if str(self.bits[:2]) == '10':
-            self.Prio = 'Prio2'
+        # if str(self.bits[:2]) == '10':
+        #     self.Prio = 'Prio2'
         if str(self.bits[:2]) == '11':
             self.prio = 'Prio3'
             self.id_bits = self.bits[8:]
             self.id_hex = hex(int(self.id_bits, 2))
-            self.node_adress_hex = hex(int(self.bits[2:8], 2))
+            self.node_adress_bits = self.bits[2:8]
+            self.node_adress_hex = hex(int(self.node_adress_bits, 2))
             self.id = self.get_id(P3_MESSAGE_IDS, self.id_hex)
             self.node = self.get_node(self.node_adress_hex)
         
     def __str__(self):
         strung=""
-        strung+='CAN-ID: ' + str(self.can_id_hex) + '\n'
-        strung+='Node: ' + str(self.node)
+        strung+='Node: ' + str(self.node) + '\n'
+        strung+='CAN-ID: ' + self.can_id_hex
         strung+='\nMSG-ID: ' + str(self.id)
         strung+="\nData: " + self.data
         strung+="\nLength: " + str(self.length)
@@ -132,7 +141,7 @@ class ManualRead():
     # Sets the bitrate for normal CAN devices
     Bitrate = PCAN_BAUD_500K
 
-    # Sets the bitrate for CAN FD devices. 
+    # Sets the bitrate for CAN FD devices.  
     # Example - Bitrate Nom: 1Mbit/s Data: 2Mbit/s:
     #   "f_clock_mhz=20, nom_brp=5, nom_tseg1=2, nom_tseg2=1, nom_sjw=1, data_brp=2, data_tseg1=3, data_tseg2=1, data_sjw=1"
     BitrateFD = b'f_clock_mhz=20, nom_brp=5, nom_tseg1=2, nom_tseg2=1, nom_sjw=1, data_brp=2, data_tseg1=3, data_tseg2=1, data_sjw=1'
@@ -151,16 +160,27 @@ class ManualRead():
         """
         Create an object starts the programm
         """
+        self.inter = interactive
+        self.msgCanMessage = TPCANMsg()
+        self.msgCanMessage.LEN = 8
+        self.msgCanMessage.MSGTYPE = PCAN_MESSAGE_EXTENDED.value
         self.ShowConfigurationHelp() ## Shows information about this sample
         self.ShowCurrentConfiguration() ## Shows the current parameters configuration
         self.c = 0
         self.k = []
         self.ids = []
         self.messages:list[Message] = []
-        nodes = {}
-        for key in NODE_ADRESSES:
-            nodes[key] = 0
-        self.all = {'Prio1': dict(nodes), 'Prio3': dict(nodes), 'No Match': 0}
+        self.nodes_p1 = {}
+        self.nodes_p3 = {}
+        for node in NODE_ADRESSES:
+            self.nodes_p1[node] = {}
+            self.nodes_p3[node] = {}
+            for key in P1_MESSAGE_IDS:
+                self.nodes_p1[node][key] = 0
+            for key in P3_MESSAGE_IDS:
+                self.nodes_p3[node][key] = 0
+        self.all = {'Prio1': self.nodes_p1, 'Prio3': self.nodes_p3, 'No Match': 0}
+                
 
         ## Checks if PCANBasic.dll is available, if not, the program terminates
         try:
@@ -191,40 +211,93 @@ class ManualRead():
         if interactive:
             self.getInput("Press <Enter> to read...")
             self.read()
-            
+    
+    def write(self):
+        p = 1
+        by = []
+        #self.clear()
+        #while strinput == "y":
+        for i in range(0, 1, 1):
+            for j in range(20):
+                # self.crc[4:6] = hex(i)[2:].zfill(2).upper()
+                # self.crc[2:4] = hex(j)[2:].zfill(2).upper()
+                # s = unhexlify(self.strung.join(self.crc))
+                # crc16 = crcmod.predefined.Crc('X25')
+                # crc16.update(s)
+                # self.crc[10:12] = crc16.hexdigest()[:2]
+                # self.crc[12:14] = crc16.hexdigest()[2:]
+                # self.crc[14:16] = '00'
+                self.strung = '0410'
+                self.msgCanMessage.ID = 1546
+                for r in range(1, 3, 1): 
+                    self.msgCanMessage.DATA[r-1] = int(hex(int(self.strung[r*2-2:r*2], 16)),16)
+                self.msgCanMessage.LEN = 2
+                #     by.append(hex(int(self.strung[r*2-2:r*2], 16)))
+                    #print(msgCanMessage.DATA[r-1])
+                print(hex(self.msgCanMessage.ID))
+                #print(self.msgCanMessage)
+                #print(f'0{by[0][1:]} {by[1][2:]} 0{by[2][2:]} 0{by[3][2:]} 0{by[4][2:]} {by[5][2:]} {by[6][2:]} 0{by[7][2:]} ')
+                print('--------------------------')
+                stsResult = self.m_objPCANBasic.Write(self.PcanHandle, self.msgCanMessage)
+                self.strung=''
+                #self.crc = list('0300000000')
+                time.sleep(0.5)
+                by = []
+                self.crc = list('0300000000')                    
+            #self.crc[:2] = 
+            #strinput = self.getInput("Do you want to write again? yes[y] or any other key to exit...", "y")
+            #strinput = chr(ord(strinput))        
             
     def read(self):
         strinput = "y"
         i = 0
-        x = threading.Thread(target = count)
+        x = Thread(target = count, name="runlocalscript")
+        write = Thread(target = self.write, name="runlocalscript")
         x.start()
         t0 = time.time()
         while strinput == "y" and (time.time() - t0) < 11:
             self.clear()
             self.ReadMessages(i)
+            #write.start()
+        sum = 0
         for message in self.messages:
-            if message.node == 'SCHIEBEHILFEGERAET':
-                logger.debug(message.id_bits)
-                logger.debug(message.data)
-                logger.debug('----------------------')
-            if message.node == 0:
-                self.all[message.prio]+=1
+            if message.prio != 'No Match':
+                for node in NODE_ADRESSES:
+                    for msg_id in P1_MESSAGE_IDS:
+                        if message.node == node:
+                            if message.id == msg_id:
+                                self.all[message.prio][message.node][message.id] += 1
+                    for msg_id in P3_MESSAGE_IDS:
+                        if message.node == node:
+                            if message.id == msg_id:
+                                self.all[message.prio][message.node][message.id] += 1
             else:
-                self.all[message.prio][message.node]+=1
-        for key in self.all:
-            if key != 'No Match':
-                logger.debug(f'\n{key}\n----------------------')
-                for node in self.all[key]:
-                    logger.debug(f'{node}: {self.all[key][node]}')
+                self.all[message.prio] += 1
+        for prio in self.all:
+            if prio != 'No Match':
+                logger.debug(f'\n{prio}\n----------------------')
+                for node in self.all[prio]:
+                    logger.debug(node)
+                    for id in self.all[prio][node]:
+                        sum += self.all[prio][node][id]
+                        logger.debug(f'{id}: {self.all[prio][node][id]}')
+                    self.all[prio][node]['Summe'] = sum
+                    logger.debug(f"Gesamt: {self.all[prio][node]['Summe']}")
+                    logger.debug("-------------------------")
+                    sum = 0
             else:
-                logger.debug(f'\n{key}: {self.all[key]}')
-        #self._return(self.all)
+                logger.debug(f'\n{prio}: {self.all[prio]}')
+        if self.inter:
+            with open('komp_pruefstand/static/can.txt','w') as file:
+                file.write(json.dumps(self.all, indent=4))
+        logger.debug("-------------------------")
+        for message in self.messages:
+            if message.prio == 'Prio1' and message.node == 'DISPLAY' and message.id == 'P1_MSG_EMCY':
+                    logger.debug(message)
+            if message.can_id_hex == '68ö':
+                logger.debug(message)
         return self.all
-        logger.debug(f'\n')
         
-    def _return(self, all):
-        pass
-
     def __del__(self):
         if self.m_DLLFound:
             self.m_objPCANBasic.Uninitialize(PCAN_NONEBUS)
@@ -300,7 +373,6 @@ class ManualRead():
         """
         microsTimeStamp = itstimestamp.micros + 1000 * itstimestamp.millis + 0x100000000 * 1000 * itstimestamp.millis_overflow
         formatted_msg=Message(msg)
-        #now = time.time()
         if formatted_msg.bits not in self.ids:
             self.ids.append(formatted_msg.bits)
         #if formatted_msg.node == 'SCHIEBEHILFEGERAET':
@@ -309,13 +381,17 @@ class ManualRead():
             #later = time.time()
             #print(later-now)
         self.messages.append(formatted_msg)
-        #print(i)
-        #print("Data: " + GetDataString(msg.DATA,msg.MSGTYPE))
-        #logger.debug("----------------------------------------------------------")
-        #self.c += 1
+        # logger.debug(f"Node:  {formatted_msg.node}")
+        # logger.debug(f"CAN-ID Bits:  {formatted_msg.bits}")
+        # logger.debug(f"CAN-ID Hex: {formatted_msg.can_id_hex}")
+        # logger.debug(f"Msg-ID Bits: {formatted_msg.id_bits}")
+        # logger.debug(f"Msg-ID Hex:  {formatted_msg.id_hex}")
+        # logger.debug(f"Node Bits:  {formatted_msg.node_adress_bits}")
+        # logger.debug(f"Nodes Hex:  {formatted_msg.node_adress_hex}")
+        # logger.debug(f"Data: {formatted_msg.data}")
+        # logger.debug("-----------------------------")
 
     def ProcessMessageCanFd(self, msg, itstimestamp):
-        logger.debug("yeah2")
         """
         Processes a received CAN-FD message
 
