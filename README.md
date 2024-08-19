@@ -1,0 +1,2 @@
+# Autostart
+~/.config/wayfire.ini

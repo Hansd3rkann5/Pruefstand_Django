@@ -58,7 +58,7 @@ class ModBusRelay():
             show_error(e)
     
     # Funktion zum Schreiben der Nachrichten auf BUS
-    def serial_write(self, id:int | None, state_request: Literal['on', 'off', 'flip']):
+    def set_relays(self, id:int | None, state_request: Literal['on', 'off', 'flip']):
         """
         Function for writing on the CAN-Bus to the Modbus RTU Relay and setting the given relays.
         Parameters:
@@ -67,7 +67,7 @@ class ModBusRelay():
         """
         try:
             self.cmd[2] = 0
-            self.cmd[3] = int(format(id-1, '#04x'), 16)
+            self.cmd[3] = int(format(id if id == None else id-1, '#04x'), 16)
             if state_request == 'on':
                 self.cmd[4] = self.ON
             if state_request == 'off':
@@ -75,11 +75,7 @@ class ModBusRelay():
             if state_request == 'flip':
                 self.cmd[4] = self.FLIP
             self.cmd[5] = 0
-            self.crc = pycrc.ModbusCRC(self.cmd[0:6])
-            self.cmd[6] = self.crc & 0xFF
-            self.cmd[7] = self.crc >> 8
-            print(self.cmd)
-            self.serial.write(self.cmd)
+            self.crc16()
         except Exception as e:
             show_error(e)
     
@@ -97,10 +93,7 @@ class ModBusRelay():
             if state == 'off':
                 self.cmd[4] = self.OFF
             self.cmd[5] = 0
-            crc = pycrc.ModbusCRC(self.cmd[0:6])
-            self.cmd[6] = crc & 0xFF
-            self.cmd[7] = crc >> 8
-            self.serial.write(self.cmd)
+            self.crc16()
             print(f'UP {state}')
             time.sleep(wait)
         except Exception as e:
@@ -120,10 +113,7 @@ class ModBusRelay():
             if state == 'off':
                 self.cmd[4] = self.OFF
             self.cmd[5] = 0
-            crc = pycrc.ModbusCRC(self.cmd[0:6])
-            self.cmd[6] = crc & 0xFF
-            self.cmd[7] = crc >> 8
-            self.serial.write(self.cmd)
+            self.crc16()
             print(f'UP {state}')
             time.sleep(wait)
         except Exception as e:
@@ -137,21 +127,22 @@ class ModBusRelay():
             self.cmd[3] = 29
             self.cmd[4] = self.ON
             self.cmd[5] = 0
-            crc = pycrc.ModbusCRC(self.cmd[0:6])
-            self.cmd[6] = crc & 0xFF
-            self.cmd[7] = crc >> 8
-            self.serial.write(self.cmd)
+            self.crc16()
             print('WAKE UP ON')
             time.sleep(3)
             self.cmd[4] = self.OFF
-            crc = pycrc.ModbusCRC(self.cmd[0:6])
-            self.cmd[6] = crc & 0xFF
-            self.cmd[7] = crc >> 8
-            self.serial.write(self.cmd)
+            self.crc16()
             print('WAKE UP OFF')
             time.sleep(2)
         except Exception as e:
             show_error(e)
+    
+    def crc16(self):
+        crc = pycrc.ModbusCRC(self.cmd[0:6])
+        self.cmd[6] = crc & 0xFF
+        self.cmd[7] = crc >> 8
+        self.serial.write(self.cmd)
+        print(self.cmd)
     
     def walk_mode(self):
         """
@@ -197,12 +188,13 @@ class TestConsumer(WebsocketConsumer):
         Function for reseting all the run variables and the relays on the Modbus RTU Relay.
         """
         self.test.clear()
+        print(self.test)
         self.running = True
         self.send_master()
-        self.modbus.reset_all()
         self.combinations.clear()
         self.results.clear()
         self.index = 1
+        self.modbus.reset_all()
         
     # Funktion zum Senden der Nachrichten an Client - verallgemeinert mit "Message" und "Value"
     def _send(self, message, value = None):
@@ -222,6 +214,7 @@ class TestConsumer(WebsocketConsumer):
                 self._send("home")
                 self.reset_vars()
                 print(self.test)
+                print("home")
             # Nutzer klickt auf Zurueck-Button
             if type == "back":
                 self.test.pop(len(self.test)-1)
@@ -243,6 +236,7 @@ class TestConsumer(WebsocketConsumer):
             if type == "manuell_comp":
                 print("Manuelle Komp. Auswahl")
                 self.test.append(type)
+                print(self.test)
             if type == "set_combinations":
                 print("set combinations")
                 combinations = text_data_json["comb"]
@@ -263,6 +257,7 @@ class TestConsumer(WebsocketConsumer):
                 self.send_master()
             if type == "next":
                 time.sleep(0.05)
+                self.index += 1
                 self.run_combinations()
             if type == "stop":
                 print("stop")
@@ -280,9 +275,6 @@ class TestConsumer(WebsocketConsumer):
             with open(f"komp_pruefstand/static/Komponenten.yaml", "r") as f:
                 self.master = yaml.safe_load(f)
             self._send("components_names", self.master)
-            self.components = {}
-            for c in self.components:
-                self.components[c] = ''
         except Exception as e:
             show_error(e)
     
@@ -294,7 +286,7 @@ class TestConsumer(WebsocketConsumer):
         """
         for x in range(1, 100):
             if self.running:
-                time.sleep(0.16)
+                time.sleep(0.15)
                 self._send("progress", x)
     
     def wake_and_walk(self):
@@ -362,7 +354,7 @@ class TestConsumer(WebsocketConsumer):
                     self._send("testnum", index)
                     for rel in range(len(combination)):
                         if combination[rel] != None:
-                            self.modbus.serial_write(combination[rel], 'on')
+                            self.modbus.set_relays(combination[rel], 'on')
                             time.sleep(0.02)
                     self.send_progress(index)
                     time.sleep(0.5)
@@ -375,17 +367,17 @@ class TestConsumer(WebsocketConsumer):
                     self._send("testnum", self.index)
                     for rel in range(len(combination)):
                         if combination[rel] != None:
-                            self.modbus.serial_write(combination[rel], 'on')
+                            self.modbus.set_relays(combination[rel], 'on')
                             time.sleep(0.02)
                     self.send_progress(self.index)
                     time.sleep(0.5)
-                    self.index += 1
                     self.modbus.reset_all()
                     index = 0
+            print(index, self.index, len(self.combinations))
             if index or self.index == len(self.combinations):
-                with open('komp_pruefstand/static/can.yaml','w') as file:
+                with open('komp_pruefstand/static/can.yaml', 'w') as file:
                     file.write(yaml.dump(self.results, indent=4, allow_unicode=True))
-                with open('komp_pruefstand/static/can.yaml','r') as file:
+                with open('komp_pruefstand/static/can.yaml', 'r') as file:
                     results = yaml.safe_load(file)
                 self._send("results", results)
         except Exception as e:
@@ -449,89 +441,91 @@ class TestConsumer(WebsocketConsumer):
             
             konfig = dictionary of the loaded Master-Konfig-File in .yaml
         """
-        relays = {}
-        for key in list(self.master.keys()):
-            relays[key] = None
-        for line in lines:
-            string = line.rstrip()
-            relay = []
-            comp = [x.strip() for x in string.split(':', line.find(':'))]
-            komma = line.find(",")
-            if comp[0] == 'Range Ext' or comp[0] == 'RangeExt':
-                comp[0] = 'Range EXT'
-            if comp[0] == 'Ladegerät' or comp[0] == 'Service Dongle':
-                comp[0] = 'Ladegerät/Service Dongle'
-            if komma != -1:
-                variants_name = [''] * len(self.master[comp[0]])
-                variants_serial = [''] * len(self.master[comp[0]])
-                choices = [x.strip() for x in comp[1].split(',')]
-                if comp[0] == 'Battery' or comp[0] == 'Range EXT':
-                    choices = self.check_kWh(choices)
-                choices = list(set(choices))
-                comp = comp[0]
-                for i in range(len(self.master[comp])):
-                    variants_name[i] = str(self.master[comp][i]['name'])  #Array mit Namen der Unterkomponenten, von Komp, wo Auswahl > 1
-                    variants_serial[i] = self.master[comp][i]['serial']   #Array mit Namen der Unterkomponenten, von Komp, wo Auswahl > 1
-                print(f'Anzahl Wahl {comp}: {len(choices)}')
-                odds = []
-                for name in range(len(choices)):
-                    if choices[name].strip() not in variants_name and choices[name].strip() not in variants_serial:
-                        odds.append((choices[name].strip()))
-                if len(odds) != 0:
-                    if len(odds) <= 1:
-                        num = 'sind'
-                        num1 = 'ist'
-                    else:
-                        num = 'ist'
-                        num1 = 'sind'
-                    print(f'Davon {num} aber nur {len(choices) - len(odds)} gültig.')
-                    print(f'{comp} {odds} {num1} ungültig')
-                    odds.append(comp)
-                    self._send("odds", odds)
-                f = {'name': [], 'serial': []}
-                for index in range(len(self.master[comp])):
-                    f['name'].append(str(self.master[comp][index]['name']))
-                    f['serial'].append(self.master[comp][index]['serial'])
-                for i in range(len(choices)):
-                    double_serial, double_name = False, False
-                    for index in range(len(self.master[comp])):
-                        n = str(self.master[comp][index]['name'])
-                        s = self.master[comp][index]['serial']
-                        nc = f['name'].count(choices[i].strip())
-                        sc = f['serial'].count(choices[i].strip())
-                        if n == choices[i].strip() and not double_name:
-                            relay.append((self.master[comp][index]["relay"]))
-                            print(f'{comp}, {choices[i]} hat Relay: {self.master[comp][index]["relay"]}')
-                            if nc > 1:
-                                double_name = True
-                                break
-                        if s == choices[i].strip() and not double_serial:
-                            relay.append((self.master[comp][index]["relay"]))
-                            print(f'{comp}, {choices[i]} hat Relay: {self.master[comp][index]["relay"]}')
-                            if sc > 1:
-                                double_serial = True
-                                break
-                relay.sort()
-                relays[comp] = list(relay)
-            elif comp[1] != 'None':
-                if comp[0] == 'Battery' or comp[0] == 'Range EXT':
-                    comp[1] = self.check_kWh(comp[1])
+        try:
+            relays = {}
+            for key in list(self.master.keys()):
+                relays[key] = None
+            for line in lines:
+                string = line.rstrip()
+                relay = []
+                comp = [x.strip() for x in string.split(':', line.find(':'))]
+                if comp[0] == 'Range Ext' or comp[0] == 'RangeExt':
+                    comp[0] = 'Range EXT'
                 if comp[0] == 'Ladegerät' or comp[0] == 'Service Dongle':
                     comp[0] = 'Ladegerät/Service Dongle'
-                for name in self.master[comp[0]]:
-                    if str(name['name']) == comp[1]:
-                        relays[comp[0]] = [name['relay']]
-                    if name['serial'] == comp[1]:
-                        relays[comp[0]] = [name['relay']]
-                print(f'{comp[0]}, {comp[1]} hat Relay: {relays[comp[0]]}')
-        print(f'Relays zu schalten: {relays}\n')
-        l = []
-        for key in relays:
-            if relays[key] != None:
-                l.append(relays[key])
-            else:
-                l.append([None])
-        return list(itertools.product(*l))
+                if line.find(",") != -1:
+                    variants_name = [''] * len(self.master[comp[0]])
+                    variants_serial = [''] * len(self.master[comp[0]])
+                    choices = [x.strip() for x in comp[1].split(',')]
+                    if comp[0] == 'Battery' or comp[0] == 'Range EXT':
+                        choices = self.check_kWh(choices)
+                    choices = list(set(choices))
+                    comp = comp[0]
+                    for i in range(len(self.master[comp])):
+                        variants_name[i] = str(self.master[comp][i]['name'])  #Array mit Namen der Unterkomponenten, von Komp, wo Auswahl > 1
+                        variants_serial[i] = self.master[comp][i]['serial']   #Array mit Namen der Unterkomponenten, von Komp, wo Auswahl > 1
+                    print(f'Anzahl Wahl {comp}: {len(choices)}')
+                    odds = []
+                    for name in range(len(choices)):
+                        if choices[name].strip() not in variants_name and choices[name].strip() not in variants_serial:
+                            odds.append((choices[name].strip()))
+                    if len(odds) != 0:
+                        if len(odds) <= 1:
+                            num = 'sind'
+                            num1 = 'ist'
+                        else:
+                            num = 'ist'
+                            num1 = 'sind'
+                        print(f'Davon {num} aber nur {len(choices) - len(odds)} gültig.')
+                        print(f'{comp} {odds} {num1} ungültig')
+                        odds.append(comp)
+                        self._send("odds", odds)
+                    f = {'name': [], 'serial': []}
+                    for index in range(len(self.master[comp])):
+                        f['name'].append(str(self.master[comp][index]['name']))
+                        f['serial'].append(self.master[comp][index]['serial'])
+                    for i in range(len(choices)):
+                        double_serial, double_name = False, False
+                        for index in range(len(self.master[comp])):
+                            n = str(self.master[comp][index]['name'])
+                            s = self.master[comp][index]['serial']
+                            nc = f['name'].count(choices[i].strip())
+                            sc = f['serial'].count(choices[i].strip())
+                            if n == choices[i].strip() and not double_name:
+                                relay.append((self.master[comp][index]["relay"]))
+                                print(f'{comp}, {choices[i]} hat Relay: {self.master[comp][index]["relay"]}')
+                                if nc > 1:
+                                    double_name = True
+                                    break
+                            if s == choices[i].strip() and not double_serial:
+                                relay.append((self.master[comp][index]["relay"]))
+                                print(f'{comp}, {choices[i]} hat Relay: {self.master[comp][index]["relay"]}')
+                                if sc > 1:
+                                    double_serial = True
+                                    break
+                    relay.sort()
+                    relays[comp] = list(relay)
+                elif comp[1] != 'None':
+                    if comp[0] == 'Battery' or comp[0] == 'Range EXT':
+                        comp[1] = self.check_kWh(comp[1])
+                    if comp[0] == 'Ladegerät' or comp[0] == 'Service Dongle':
+                        comp[0] = 'Ladegerät/Service Dongle'
+                    for name in self.master[comp[0]]:
+                        if str(name['name']) == comp[1]:
+                            relays[comp[0]] = [name['relay']]
+                        if name['serial'] == comp[1]:
+                            relays[comp[0]] = [name['relay']]
+                    print(f'{comp[0]}, {comp[1]} hat Relay: {relays[comp[0]]}')
+            print(f'Relays zu schalten: {relays}\n')
+            l = []
+            for key in relays:
+                if relays[key] != None:
+                    l.append(relays[key])
+                else:
+                    l.append([None])
+            return list(itertools.product(*l))
+        except Exception as e:
+            show_error(e)
     
     def check_kWh(self, choices: list[str] | str):
         """
@@ -590,3 +584,4 @@ class TestConsumer(WebsocketConsumer):
 #Kundennummer inning 3006166
 #Buchungsnummer: P/00026620/000002 --> PSP Element bei BANF
 #Manuela Kabelbaum Bestellung mit PSP Element
+# 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
