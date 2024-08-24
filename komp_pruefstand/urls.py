@@ -5,8 +5,5 @@ from . import views
 
 urlpatterns = [
     path("", views.komp_pruefstand),
-    path("konfig/", views.konfig),
-    path("manu/", views.manu),
-    path("konfig/drop_konfig/", views.drop_konfig),
-    path("manu/drop_konfig/", views.drop_konfig),
+    path("download", views.download_file, name="download" ),
 ]

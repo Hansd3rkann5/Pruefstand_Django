@@ -2,7 +2,7 @@
     "Prio1": {
         "MOTORSTEUERUNG": {
             "P1_MSG_EMCYOFF": 0,
-            "P1_MSG_EMCY": 0,
+            "P1_MSG_EMCY": {},
             "P1_MSG_SYNC": 0,
             "P1_MSG_PRIO_BROADCAST": 0,
             "P1_MSG_REPLPD": 0,
@@ -11,13 +11,13 @@
             "P1_MSG_ACKNSD": 0,
             "P1_MSG_INFO": 0,
             "P1_MSG_WARNING": 0,
-            "P1_MSG_BROADCAST": 1,
-            "P1_MSG_SLAVECHG": 3,
-            "Summe": 4
+            "P1_MSG_BROADCAST": 0,
+            "P1_MSG_SLAVECHG": 0,
+            "Summe": 0
         },
         "SCHIEBEHILFEGERAET": {
             "P1_MSG_EMCYOFF": 0,
-            "P1_MSG_EMCY": 0,
+            "P1_MSG_EMCY": {},
             "P1_MSG_SYNC": 0,
             "P1_MSG_PRIO_BROADCAST": 0,
             "P1_MSG_REPLPD": 0,
@@ -32,22 +32,22 @@
         },
         "BMS": {
             "P1_MSG_EMCYOFF": 0,
-            "P1_MSG_EMCY": 0,
+            "P1_MSG_EMCY": {},
             "P1_MSG_SYNC": 0,
             "P1_MSG_PRIO_BROADCAST": 0,
-            "P1_MSG_REPLPD": 871,
+            "P1_MSG_REPLPD": 0,
             "P1_MSG_REPLSD": 0,
-            "P1_MSG_ACKNPD": 61,
+            "P1_MSG_ACKNPD": 0,
             "P1_MSG_ACKNSD": 0,
             "P1_MSG_INFO": 0,
             "P1_MSG_WARNING": 0,
             "P1_MSG_BROADCAST": 0,
-            "P1_MSG_SLAVECHG": 2,
-            "Summe": 934
+            "P1_MSG_SLAVECHG": 1,
+            "Summe": 1
         },
         "LADEPORT": {
             "P1_MSG_EMCYOFF": 0,
-            "P1_MSG_EMCY": 0,
+            "P1_MSG_EMCY": {},
             "P1_MSG_SYNC": 0,
             "P1_MSG_PRIO_BROADCAST": 0,
             "P1_MSG_REPLPD": 0,
@@ -62,22 +62,22 @@
         },
         "DISPLAY": {
             "P1_MSG_EMCYOFF": 0,
-            "P1_MSG_EMCY": 2,
+            "P1_MSG_EMCY": {},
             "P1_MSG_SYNC": 0,
             "P1_MSG_PRIO_BROADCAST": 0,
-            "P1_MSG_REPLPD": 81,
+            "P1_MSG_REPLPD": 0,
             "P1_MSG_REPLSD": 0,
-            "P1_MSG_ACKNPD": 942,
+            "P1_MSG_ACKNPD": 0,
             "P1_MSG_ACKNSD": 0,
             "P1_MSG_INFO": 0,
             "P1_MSG_WARNING": 0,
-            "P1_MSG_BROADCAST": 3,
+            "P1_MSG_BROADCAST": 1,
             "P1_MSG_SLAVECHG": 2,
-            "Summe": 1030
+            "Summe": 3
         },
         "LICHT": {
             "P1_MSG_EMCYOFF": 0,
-            "P1_MSG_EMCY": 0,
+            "P1_MSG_EMCY": {},
             "P1_MSG_SYNC": 0,
             "P1_MSG_PRIO_BROADCAST": 0,
             "P1_MSG_REPLPD": 0,
@@ -92,7 +92,7 @@
         },
         "ECONNECT": {
             "P1_MSG_EMCYOFF": 0,
-            "P1_MSG_EMCY": 0,
+            "P1_MSG_EMCY": {},
             "P1_MSG_SYNC": 0,
             "P1_MSG_PRIO_BROADCAST": 0,
             "P1_MSG_REPLPD": 0,
@@ -107,7 +107,7 @@
         },
         "GPSTUNER": {
             "P1_MSG_EMCYOFF": 0,
-            "P1_MSG_EMCY": 0,
+            "P1_MSG_EMCY": {},
             "P1_MSG_SYNC": 0,
             "P1_MSG_PRIO_BROADCAST": 0,
             "P1_MSG_REPLPD": 0,
@@ -122,7 +122,7 @@
         },
         "SMARTBOX": {
             "P1_MSG_EMCYOFF": 0,
-            "P1_MSG_EMCY": 0,
+            "P1_MSG_EMCY": {},
             "P1_MSG_SYNC": 0,
             "P1_MSG_PRIO_BROADCAST": 0,
             "P1_MSG_REPLPD": 0,
@@ -132,12 +132,12 @@
             "P1_MSG_INFO": 0,
             "P1_MSG_WARNING": 0,
             "P1_MSG_BROADCAST": 0,
-            "P1_MSG_SLAVECHG": 4,
-            "Summe": 4
+            "P1_MSG_SLAVECHG": 2,
+            "Summe": 2
         },
         "SERVICEMODUL": {
             "P1_MSG_EMCYOFF": 0,
-            "P1_MSG_EMCY": 0,
+            "P1_MSG_EMCY": {},
             "P1_MSG_SYNC": 0,
             "P1_MSG_PRIO_BROADCAST": 0,
             "P1_MSG_REPLPD": 0,
@@ -152,7 +152,7 @@
         },
         "ENTWICKLUNGSTOOLS": {
             "P1_MSG_EMCYOFF": 0,
-            "P1_MSG_EMCY": 0,
+            "P1_MSG_EMCY": {},
             "P1_MSG_SYNC": 0,
             "P1_MSG_PRIO_BROADCAST": 0,
             "P1_MSG_REPLPD": 0,
@@ -182,11 +182,11 @@
             "Summe": 0
         },
         "BMS": {
-            "P3_MSG_PDR": 873,
-            "P3_MSG_PDW": 63,
+            "P3_MSG_PDR": 0,
+            "P3_MSG_PDW": 0,
             "P3_MSG_SDR": 0,
             "P3_MSG_SDW": 0,
-            "Summe": 936
+            "Summe": 0
         },
         "LADEPORT": {
             "P3_MSG_PDR": 0,
@@ -196,11 +196,11 @@
             "Summe": 0
         },
         "DISPLAY": {
-            "P3_MSG_PDR": 81,
-            "P3_MSG_PDW": 951,
+            "P3_MSG_PDR": 0,
+            "P3_MSG_PDW": 0,
             "P3_MSG_SDR": 0,
             "P3_MSG_SDW": 0,
-            "Summe": 1032
+            "Summe": 0
         },
         "LICHT": {
             "P3_MSG_PDR": 0,
@@ -245,5 +245,5 @@
             "Summe": 0
         }
     },
-    "No Match": 967
+    "No Match": 765
 }

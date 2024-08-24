@@ -1,5 +1,5 @@
 Motor:
-  - name: HPR50dfdf
+  - name: HPR50
     serial: "329587.0104"
     relay: 1
   - name: HPR50S

@@ -18,7 +18,6 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'pruefstand.settings')
 
 django_asgi_application = get_asgi_application()
 
-#application = get_asgi_application()
 application = ProtocolTypeRouter({
     'http': django_asgi_application,
     'websocket': (

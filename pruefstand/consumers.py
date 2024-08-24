@@ -1,4 +1,4 @@
-import time
+import asyncio
 import json
 import sys, os
 import serial
@@ -8,19 +8,24 @@ import yaml
 import numpy as np
 import itertools
 import re
+import mimetypes
+import glob
+import pandas as pd
+from datetime import datetime as dt
 from pruefstand import pycrc
 from enum import Enum
 from django.http import JsonResponse
 from threading import Thread
 from typing import Literal
-from channels.generic.websocket import WebsocketConsumer
+from komp_pruefstand.views import download_file
+from channels.generic.websocket import AsyncWebsocketConsumer
 from .PCAN.libpcanbasic.examples.console.Python.ManualRead.ManualRead import ManualRead
 
-    
+
 def show_error(exception):
     exc_type, exc_obj, exc_tb = sys.exc_info()
-    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-    print(exc_type, fname, exc_tb.tb_lineno, exception)
+    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1] # type: ignore
+    print(exc_type, fname, exc_tb.tb_lineno, exception) # type: ignore
 
 class ModBusRelay():
     def __init__(self, *args, **kwargs):
@@ -29,8 +34,6 @@ class ModBusRelay():
         self.serial = serial.Serial("/dev/ttyS0",9600,timeout=1)
         # Array fuer RS485-Nachricht
         self.cmd = [0x01, 0x05, 0, 0, 0, 0, 0, 0]
-        # Array mit Strings der Komponenten
-        self.comps = ["Motor", "Display", "Battery", "Charger", "Range EXT", "Service Dongle"]
         # Leerer Array zum abspeichern der zu schaltenden Relais
         self.set:list[int | None] = [None] * 6
         # Byte zum Einschalten eines Relais
@@ -41,7 +44,7 @@ class ModBusRelay():
         self.FLIP = 0x55
         
     # Alle Relais aus: 01 05 00 FF 00 00 FD FA
-    def reset_all(self):
+    async def reset_all(self):
         """
         Resets all the relays on the Modbus RTU Relay.
         """
@@ -52,8 +55,8 @@ class ModBusRelay():
             self.cmd[6] = 0xFD
             self.cmd[7] = 0xFA
             print(f"all off: {self.cmd}")
-            self.serial.write(self.cmd)
-            time.sleep(0.5)
+            self.serial.write(self.cmd) # type: ignore
+            await asyncio.sleep(0.1)
         except Exception as e:
             show_error(e)
     
@@ -79,7 +82,17 @@ class ModBusRelay():
         except Exception as e:
             show_error(e)
     
-    def up_button(self, state, wait = 0.0):
+    def crc16(self):
+        """
+        Function for calculating the cyclic redundancy checksum
+        """
+        crc = pycrc.ModbusCRC(self.cmd[0:6])
+        self.cmd[6] = crc & 0xFF
+        self.cmd[7] = crc >> 8
+        self.serial.write(self.cmd) # type: ignore
+        #print(self.cmd)
+    
+    async def up_button(self, state, wait = 0.0):
         """
         Function for simulating the UP button on the handlebar control
         Parameters:
@@ -87,7 +100,7 @@ class ModBusRelay():
             wait = float integer with the amount of time the desired state has to hold
         """
         try:
-            self.cmd[3] = 30
+            self.cmd[3] = 31
             if state == 'on':
                 self.cmd[4] = self.ON
             if state == 'off':
@@ -95,11 +108,11 @@ class ModBusRelay():
             self.cmd[5] = 0
             self.crc16()
             print(f'UP {state}')
-            time.sleep(wait)
+            await asyncio.sleep(wait)
         except Exception as e:
             show_error(e)
         
-    def down_button(self, state, wait = 0.0):
+    async def down_button(self, state, wait = 0.0):
         """
         Function for simulating the DOWN button on the handlebar control
         Parameters:
@@ -115,93 +128,100 @@ class ModBusRelay():
             self.cmd[5] = 0
             self.crc16()
             print(f'UP {state}')
-            time.sleep(wait)
+            await asyncio.sleep(wait)
         except Exception as e:
             show_error(e)
         
-    def wake_up(self):
+    async def wake_up(self):
         """
         Function for switching on the system by simulating a press on the display's button
         """
         try:
-            self.cmd[3] = 29
+            self.cmd[3] = 30
             self.cmd[4] = self.ON
             self.cmd[5] = 0
             self.crc16()
             print('WAKE UP ON')
-            time.sleep(3)
+            await asyncio.sleep(3)
             self.cmd[4] = self.OFF
             self.crc16()
             print('WAKE UP OFF')
-            time.sleep(2)
+            await asyncio.sleep(2)
         except Exception as e:
             show_error(e)
-    
-    def crc16(self):
-        crc = pycrc.ModbusCRC(self.cmd[0:6])
-        self.cmd[6] = crc & 0xFF
-        self.cmd[7] = crc >> 8
-        self.serial.write(self.cmd)
-        print(self.cmd)
-    
-    def walk_mode(self):
+        
+    async def walk_mode(self):
         """
         Function for getting the system into walk mode and holding the pushing aid function for 10 seconds
         """
-        self.up_button('on', 1)
-        self.up_button('off', 0.5)
-        self.up_button('on', 10)
-        self.up_button('off')
+        await self.up_button('on', 1)
+        await self.up_button('off', 0.5)
+        await self.up_button('on', 10)
+        await self.up_button('off')
 
 ####################################################################################################################
 
 # Klasse für Kommunikation zwischen Server und Client
-class TestConsumer(WebsocketConsumer):
+class TestConsumer(AsyncWebsocketConsumer):
+    test:list[str] = []
+    combinations:list[tuple] = []
+    index = 1
+    error_list = pd.DataFrame(pd.read_csv('/home/simonbader/Coding/Fehlerliste.csv', sep=';', dtype=str))
+    group = 'tq'
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Variable fuer 
         self.running = False
         # Variable zur Kommunikation mit 32CH-Relais-Block
         self.modbus = ModBusRelay()
-        # Variable zur Ueberwachung des CAN-Bus
-
-        # Dictionary zum Abspeichern der Kombinationsmöglichkeiten
         #self.combinations:list[list[int | None]] = []
-        self.combinations:list[tuple] = []
+        # self.combinations:list[tuple] = []
         # Array, in welchem die Nutzerwahl der Testart abgespeichert wird
-        self.test:list[str] = []
-        # Dictionary zum abspeichern der CAN-Bus-Ueberwachungsergebnisse
+        # self.test:list[str] = []
+        # Dictionary zum abspeichern der CAN-Bus-Ueberwachungsergebnisse 
         self.results = {}
+        self.path = '/home/simonbader/Coding/TestResults'
+        self.filenames:list[str] = []
     
     # Funktion zum Aufbau der Websocket-Verbindung
-    def connect(self):
-        self.accept()
-        self.reset_vars()
+    async def connect(self):
+        await self.accept()
+        await self.channel_layer.group_add(self.group, self.channel_name)  # type: ignore
+        await self.reset_vars()
+
+    async def websocket_accept(self, event):
+        if event['id'] != self.channel_name:
+            await self.send(text_data=event['message'])
     
-    # Funktion zum Trennen der Websocket-Verbindung
-    def disconnect(self, close_code):
+    # Funktion zum Trennen der Websocket-Verbindung 
+    async def disconnect(self, close_code):
         self.running = False
+        await self.channel_layer.group_discard(self.group, self.channel_name)  # type: ignore
         
     # Funktion zum Zuruecksetzen aller Variablen welche im Laufe eines Tests benötigt werden
-    def reset_vars(self):
+    async def reset_vars(self):
         """
         Function for reseting all the run variables and the relays on the Modbus RTU Relay.
         """
         self.test.clear()
-        print(self.test)
         self.running = True
-        self.send_master()
+        await self.send_master()
         self.combinations.clear()
         self.results.clear()
         self.index = 1
-        self.modbus.reset_all()
+        await self.modbus.reset_all()
         
     # Funktion zum Senden der Nachrichten an Client - verallgemeinert mit "Message" und "Value"
-    def _send(self, message, value = None):
-        self.send(text_data=json.dumps({message: value}))
-
+    async def _send(self, message, value = None):
+        await self.send(text_data=json.dumps({message: value}))
+        if message != 'master':
+            await self.group_send(message, value)
+        
+    async def group_send(self, message, value = None):
+        await self.channel_layer.group_send(self.group, {"type": "websocket.accept", 'message': json.dumps({message: value}), 'id' : self.channel_name}) # type: ignore
+        
     # Alle Funktionen für die Kommunikation zwischen Client und Server
-    def receive(self, text_data):
+    async def receive(self, text_data):
         """
         Function for recieving and sending information between the server and the client and proceeding that information to the
         corresponding functions.
@@ -211,54 +231,60 @@ class TestConsumer(WebsocketConsumer):
             type = text_data_json["type"]
             # Nutzer klickt auf Home-Button
             if type == "home":
-                self._send("home")
-                self.reset_vars()
-                print(self.test)
-                print("home")
+                # self._send("home")
+                await self._send("home")
+                await self.reset_vars()
             # Nutzer klickt auf Zurueck-Button
             if type == "back":
                 self.test.pop(len(self.test)-1)
             if type == "auto":
                 print("Automatisierter Durchlauf")
-                self._send(type)
+                await self._send(type)
                 self.test.append(type)
-                print(self.test)
             if type == "manuell":
-                print("Manueller Durchlauf der Kombinatoriken")
-                self._send(type)
+                print("Manueller Durchlauf der Kombinationen")
+                await self._send(type)
                 self.test.append(type)
-                print(self.test)
             if type == "konfig":
                 print("Test über Konfig-File")
-                self._send(type)
+                await self._send(type)
                 self.test.append(type)
-                print(self.test)
             if type == "manuell_comp":
                 print("Manuelle Komp. Auswahl")
                 self.test.append(type)
-                print(self.test)
             if type == "set_combinations":
                 print("set combinations")
                 combinations = text_data_json["comb"]
-                self.set_Relay(combinations)
+                await self.set_Relay(combinations)
             if type == "Konfig-File":
                 print("Konfig-File recieved")
                 konfig = text_data_json["text"]
                 f = open("komp_pruefstand/static/Konfig.txt", "w")
                 f.write(konfig)
                 f.close()
-                self.check_konfig_file()
+                await self.check_konfig_file()
             if type == "Master-File":
                 print("Master-File recieved")
                 master = text_data_json["text"]
                 f = open("komp_pruefstand/static/Komponenten.yaml", "w")
                 f.write(master)
                 f.close()
-                self.send_master()
+                await self.send_master()
             if type == "next":
-                time.sleep(0.05)
+                await asyncio.sleep(0.05)
                 self.index += 1
-                self.run_combinations()
+                await self.run_combinations() # type: ignore
+            if type == "delete":
+                os.remove(text_data_json["message"])
+                await self.get_metadata()
+            if type == "download":
+                with open(f'{text_data_json["message"]}', 'rb') as f:
+                    file = yaml.safe_load(f)
+                filename = os.path.basename(text_data_json["message"])
+                print(text_data_json["message"])
+                await self._send("filename", filename)
+                await asyncio.sleep(0.1)
+                await self._send("download", file)
             if type == "stop":
                 print("stop")
                 self.stop()
@@ -266,7 +292,7 @@ class TestConsumer(WebsocketConsumer):
             show_error(e)
     
     # Funktion, welche das Master-Konfig-File an den Client sendet
-    def send_master(self):
+    async def send_master(self):
         """
         Sends the Master-Config-File to the Client for displaying the possible choices to the user.
         """
@@ -274,52 +300,46 @@ class TestConsumer(WebsocketConsumer):
         try:
             with open(f"komp_pruefstand/static/Komponenten.yaml", "r") as f:
                 self.master = yaml.safe_load(f)
-            self._send("components_names", self.master)
+            await self._send("master", self.master)
         except Exception as e:
             show_error(e)
     
-    # Funktion, welche den Ladefortschritt an den Client sendet, damit dort
-    # der Ladebalken den Fortschritt des Tests anzeigen kann
-    def loading_bar(self):
+    # Funktion, welche den Ladefortschritt an den Client sendet, damit dort der Ladebalken den Fortschritt des Tests anzeigen kann
+    async def loading_bar(self):
         """
         Function for sending a countup to the client for displaying the progress to the user from 1 to 100
         """
         for x in range(1, 100):
             if self.running:
-                time.sleep(0.15)
-                self._send("progress", x)
+                await asyncio.sleep(0.17)
+                await self._send("progress", x)
     
-    def wake_and_walk(self):
+    async def wake_and_walk(self):
         """
         Function for switching on the system and start the walking aid in one command
         """
-        self.modbus.wake_up()
-        self.modbus.walk_mode()
+        await self.modbus.wake_up()
+        await self.modbus.walk_mode()
     
-    def send_progress(self, index:int):
-        loading_bar = Thread(target = self.loading_bar, name="runlocalscript")
-        wake_and_walk = Thread(target = self.wake_and_walk, name="runlocalscript")
+    async def send_progress(self, index:int):
         component = {}
         for c in self.master:
             component[c] = ''
         try:
-            loading_bar.start()
-            wake_and_walk.start()
-            time.sleep(7)
-            self.results[f'Test{index}'] = ManualRead().read()
+            asyncio.create_task(self.loading_bar())
+            asyncio.create_task(self.wake_and_walk())
+            await asyncio.sleep(7)
+            self.results[f'Test{index}'] = await ManualRead().read(self.error_list)
             self.results[f'Test{index}']['Komponenten'] = component
             self.find_names(index)
-            self._send("progress", 100)
-            if index != len(self.combinations):
-                self._send("next", None)
+            await self._send("progress", 100)
             if index == len(self.combinations):
-                #self.check_results()
                 print('Alle Kombinatoriken geschalten')
-                self._send("done")
+                await self._send("done")
         except Exception as e:
             show_error(e)
     
-    def set_Relay(self, combinations):
+    async def set_Relay(self, combinations):
         comb = []
         try:
             #with open(f"komp_pruefstand/static/Komponenten.yaml", "r") as f:
@@ -333,66 +353,68 @@ class TestConsumer(WebsocketConsumer):
                         comb.append(self.master[name][combination[name]]['relay'])
                     else:
                         comb.append(None)
-                self.combinations.append(comb)
+                self.combinations.append(comb) # type: ignore
                 comb = []
-            self._send("combinations", self.combinations)
-            self.run_combinations()
+            await self._send("combinations", self.combinations)
+            await self.run_combinations()
         except Exception as e:
             show_error(e)
         
-    def run_combinations(self):
+    async def run_combinations(self):
         """
         Function that runs through the user selected configurations - according to the choice of 'auto' or 'manual' - and sets the relays of an
         individual combination in the list of all possible combinations. It also sends the current number of the running combination to the client
         for displaying the current configuration to the user.
         """
         try:
-            self._send("progress", 0)
+            print(self.test)
             if "auto" in self.test:
+                await self._send("progress", 0)
                 for index, combination in enumerate(self.combinations, start=1):
                     print(f'Combination: {index}: {combination}')
-                    self._send("testnum", index)
+                    await self._send("testnum", index)
                     for rel in range(len(combination)):
                         if combination[rel] != None:
                             self.modbus.set_relays(combination[rel], 'on')
-                            time.sleep(0.02)
-                    self.send_progress(index)
-                    time.sleep(0.5)
-                    self.modbus.reset_all()
-                    self._send("progress", 0)
+                            await asyncio.sleep(0.02)
+                    await self.send_progress(index)
+                    await asyncio.sleep(0.5)
+                    await self.modbus.reset_all()
+                    await self._send("progress", 0)
             if "manuell" in self.test:
+                await self._send("progress", 0)
+                print(self.combinations)
                 if self.index != len(self.combinations) + 1:
                     combination = self.combinations[self.index - 1]
                     print(f'Combination: {self.index}: {combination}')
-                    self._send("testnum", self.index)
+                    await self._send("testnum", self.index)
                     for rel in range(len(combination)):
                         if combination[rel] != None:
                             self.modbus.set_relays(combination[rel], 'on')
-                            time.sleep(0.02)
-                    self.send_progress(self.index)
-                    time.sleep(0.5)
-                    self.modbus.reset_all()
+                            await asyncio.sleep(0.02)
+                    await self.send_progress(self.index)
+                    await asyncio.sleep(0.5)
+                    await self.modbus.reset_all()
                     index = 0
-            print(index, self.index, len(self.combinations))
             if index or self.index == len(self.combinations):
-                with open('komp_pruefstand/static/can.yaml', 'w') as file:
-                    file.write(yaml.dump(self.results, indent=4, allow_unicode=True))
-                with open('komp_pruefstand/static/can.yaml', 'r') as file:
-                    results = yaml.safe_load(file)
-                self._send("results", results)
+                filename = dt.now().strftime("%Y_%m_%d-%H_%M_%S")
+                with open(f'{self.path}/TestErgebnis_{filename}.yaml', 'w') as file:
+                    file.write(yaml.dump(self.results, indent=4, allow_unicode=True)) 
+                await self.get_metadata()
+                # with open(f'/home/simonbader/Coding/TestResults/TestErgebnis{len(files)+1}.yaml', 'r') as file:
+                #     results = yaml.safe_load(file)
         except Exception as e:
             show_error(e)
     
-    def check_konfig_file(self):
+    async def check_konfig_file(self):
         """
         Function that strips the by the user uploaded Konfig-File in category- and component-names and passes that information to the 'parser-function' for further analysis.
         Sends the recieved combination-possibilities to the client and passes them to the 'run_combinations-function'.
         """
         #self.combinations:list[tuple] = []
         try:
-            self._send('Upload erfolgreich')
+            await self._send('Upload erfolgreich')
             with open(f"komp_pruefstand/static/Konfig.txt", "r") as t:
-                print(self.master)
                 lines = t.readlines()
                 breaks = []
                 konfig_count = 1
@@ -402,7 +424,8 @@ class TestConsumer(WebsocketConsumer):
                         breaks.append(index)
                         konfig_count += 1
                 if konfig_count == 1:
-                    self.combinations = self.parser(lines)
+                    c = await self.parser(lines) # type: ignore
+                    self.combinations = c or []
                 else:
                     print(f'Anzahl Konfigs: {konfig_count}')
                     konfigs = {}
@@ -413,7 +436,7 @@ class TestConsumer(WebsocketConsumer):
                         if k+1 == len(breaks):
                             konfigs[f'Konfig{k+2}'] = lines[v:len(lines)]
                     for k in range(konfig_count):
-                        combination = self.parser(konfigs[f'Konfig{k+1}'])
+                        combination = (await self.parser(konfigs[f'Konfig{k+1}'])) or []
                         if len(combination) == 1 and combination[0] not in self.combinations:
                             self.combinations.append(combination[0])
                         else:
@@ -421,13 +444,13 @@ class TestConsumer(WebsocketConsumer):
                                 if combination[c] not in self.combinations:
                                     self.combinations.append(combination[c])
                 print(f'\nAnzahl der Kombinationen: {len(self.combinations)}')
-                self._send("combinations", self.combinations)
-                self._send("konfigquantity", len(self.combinations))
-                self.run_combinations()
+                await self._send("combinations", self.combinations)
+                await self._send("konfigquantity", len(self.combinations))
+                await self.run_combinations()
         except Exception as e:
             show_error(e)
             
-    def parser(self, lines:list[str]):
+    async def parser(self, lines:list[str]):
         """
         Function for parsing the uploaded Config-File from the user. Checks for wrong written category- (Motor, Display, etc.)
         and component-names (e.g. HPR50).
@@ -463,7 +486,7 @@ class TestConsumer(WebsocketConsumer):
                     comp = comp[0]
                     for i in range(len(self.master[comp])):
                         variants_name[i] = str(self.master[comp][i]['name'])  #Array mit Namen der Unterkomponenten, von Komp, wo Auswahl > 1
-                        variants_serial[i] = self.master[comp][i]['serial']   #Array mit Namen der Unterkomponenten, von Komp, wo Auswahl > 1
+                        variants_serial[i] = self.master[comp][i]['serial']   #Array mit Seriennummer der Unterkomponenten, von Komp, wo Auswahl > 1
                     print(f'Anzahl Wahl {comp}: {len(choices)}')
                     odds = []
                     for name in range(len(choices)):
@@ -479,7 +502,7 @@ class TestConsumer(WebsocketConsumer):
                         print(f'Davon {num} aber nur {len(choices) - len(odds)} gültig.')
                         print(f'{comp} {odds} {num1} ungültig')
                         odds.append(comp)
-                        self._send("odds", odds)
+                        await self._send("odds", odds)
                     f = {'name': [], 'serial': []}
                     for index in range(len(self.master[comp])):
                         f['name'].append(str(self.master[comp][index]['name']))
@@ -507,7 +530,7 @@ class TestConsumer(WebsocketConsumer):
                     relays[comp] = list(relay)
                 elif comp[1] != 'None':
                     if comp[0] == 'Battery' or comp[0] == 'Range EXT':
-                        comp[1] = self.check_kWh(comp[1])
+                        comp[1] = self.check_kWh(comp[1])  # type: ignore
                     if comp[0] == 'Ladegerät' or comp[0] == 'Service Dongle':
                         comp[0] = 'Ladegerät/Service Dongle'
                     for name in self.master[comp[0]]:
@@ -544,7 +567,7 @@ class TestConsumer(WebsocketConsumer):
                     if choice[-4:] != ' kWh':
                         k = choice.find('k')
                         choice = choice[:k] + ' ' + choice[k:]
-                        choices[ind] = choice
+                        choices[ind] = choice  # type: ignore
         else:
             x = choices[-4:]
             digit = bool(re.search(r'\d', x))
@@ -565,6 +588,13 @@ class TestConsumer(WebsocketConsumer):
                 for name in self.master[component]:
                     if relay == name['relay']:
                         if name['name'] != None:
+                            if name['name'] == 'Ladegerät':
+                                del self.results[f'Test{index}']['Komponenten']['Ladegerät/Service Dongle']
+                                self.results[f'Test{index}']['Komponenten']['Ladegerät'] = name['serial']
+                                break
+                            if name['name'] == 'Service Dongle':
+                                component = 'Service Dongle'
+                                del self.results[f'Test{index}']['Komponenten']['Ladegerät/Service Dongle']
                             self.results[f'Test{index}']['Komponenten'][component] =  name['name']
                             break
                         else:
@@ -575,6 +605,21 @@ class TestConsumer(WebsocketConsumer):
                 break
             else:
                 continue
+            
+    async def get_metadata(self):
+        try:
+            self.filenames = sorted(glob.glob(self.path + '/*.yaml'))
+            self.filenames.reverse()
+            metadata = {}
+            metadata['TestResult'] = {}
+            results = {}
+            for i, filename in enumerate(self.filenames):
+                results[f'{i}'] = {}
+                results[f'{i}']['filename'] = self.filenames[i]
+                results[f'{i}']['created_at'] = os.path.getatime(filename)
+            await self._send("results", results)
+        except Exception as e:
+            show_error(e)
 
     def stop(self):
         self.running = False
