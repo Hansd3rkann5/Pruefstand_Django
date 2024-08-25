@@ -70,33 +70,33 @@ P3_MESSAGE_IDS = {
 }
 
 FEHLERGRUPPEN = {
-    'ERG_NOINIT':           {'Hex': 0x0, 'Short': ''},
-    'ERG_UNGROUPED':        {'Hex': 0x1, 'Short': 'GEN'},
-    'ERG_SOFTWARE':         {'Hex': 0x2, 'Short': 'SW'},
-    'ERG_HARDWARE': 	    {'Hex': 0x3, 'Short': 'HW'},
-    'ERG_CONNECTION':	    {'Hex': 0x4, 'Short': 'CONN'},
-    'ERG_COMMUNICATION':	{'Hex': 0x5, 'Short': 'COMM'},
-    'ERG_SENSOR':	        {'Hex': 0x6, 'Short': 'SENS'},
-    'ERG_OVERTEMP':	        {'Hex': 0x7, 'Short': 'HOT'},
-    'ERG_UNDERTEMP':	    {'Hex': 0x8, 'Short': 'COLD'},
-    'ERG_UNDERVOLT':	    {'Hex': 0x9, 'Short': 'UV'},
-    'ERG_OVERVOLT':	        {'Hex': 0xa, 'Short': 'OV'},
-    'ERG_BUTTON':	        {'Hex': 0xb, 'Short': 'BTN'},
-    'ERG_UPDATE':	        {'Hex': 0xc, 'Short': 'UPDT'},
+    'ERG_NOINIT':           {'Hex': '0x0', 'Short': ''},
+    'ERG_UNGROUPED':        {'Hex': '0x1', 'Short': 'GEN'},
+    'ERG_SOFTWARE':         {'Hex': '0x2', 'Short': 'SW'},
+    'ERG_HARDWARE': 	    {'Hex': '0x3', 'Short': 'HW'},
+    'ERG_CONNECTION':	    {'Hex': '0x4', 'Short': 'CONN'},
+    'ERG_COMMUNICATION':	{'Hex': '0x5', 'Short': 'COMM'},
+    'ERG_SENSOR':	        {'Hex': '0x6', 'Short': 'SENS'},
+    'ERG_OVERTEMP':	        {'Hex': '0x7', 'Short': 'HOT'},
+    'ERG_UNDERTEMP':	    {'Hex': '0x8', 'Short': 'COLD'},
+    'ERG_UNDERVOLT':	    {'Hex': '0x9', 'Short': 'UV'},
+    'ERG_OVERVOLT':	        {'Hex': '0xa', 'Short': 'OV'},
+    'ERG_BUTTON':	        {'Hex': '0xb', 'Short': 'BTN'},
+    'ERG_UPDATE':	        {'Hex': '0xc', 'Short': 'UPDT'},
 }
 
 FEHLERKOMPONENTEN = {
-    'ERG_NOINIT':           {'Hex': 0x0, 'Short': ''},
-    'ERC_MOTOR':            {'Hex': 0x1, 'Short': 'DRV'},
-    'ERC_DISPLAY':          {'Hex': 0x2, 'Short': 'DISP'},
-    'ERC_MAIN_BATTERY': 	{'Hex': 0x3, 'Short': 'BATT'},
-    'ERC_RANGE_EXTENDER':	{'Hex': 0x4, 'Short': 'REX'},
-    'ERC_SPEEDSENSOR':	    {'Hex': 0x5, 'Short': 'SPD'},
-    'ERC_SYSTEM':	        {'Hex': 0x6, 'Short': 'SYS'},
-    'ERC_REMOTE':	        {'Hex': 0x7, 'Short': 'REM'},
-    'ERC_AX':	            {'Hex': 0x8, 'Short': 'AUX'},
-    'ERC_CHARGER':	        {'Hex': 0x9, 'Short': 'CHG'},
-    'ERC_APP':	            {'Hex': 0xa, 'Short': 'APP'},
+    'ERG_NOINIT':           {'Hex': '0x0', 'Short': ''},
+    'ERC_MOTOR':            {'Hex': '0x1', 'Short': 'DRV'},
+    'ERC_DISPLAY':          {'Hex': '0x2', 'Short': 'DISP'},
+    'ERC_MAIN_BATTERY': 	{'Hex': '0x3', 'Short': 'BATT'},
+    'ERC_RANGE_EXTENDER':	{'Hex': '0x4', 'Short': 'REX'},
+    'ERC_SPEEDSENSOR':	    {'Hex': '0x5', 'Short': 'SPD'},
+    'ERC_SYSTEM':	        {'Hex': '0x6', 'Short': 'SYS'},
+    'ERC_REMOTE':	        {'Hex': '0x7', 'Short': 'REM'},
+    'ERC_AX':	            {'Hex': '0x8', 'Short': 'AUX'},
+    'ERC_CHARGER':	        {'Hex': '0x9', 'Short': 'CHG'},
+    'ERC_APP':	            {'Hex': '0xa', 'Short': 'APP'},
 }
 
 class Message():
@@ -153,11 +153,11 @@ class Message():
         return 'no match'
 
 
-def count():
+async def count():
     i = 1
-    while i < 11:
+    while i < 18:
         print(f'{i} sec')
-        time.sleep(1)
+        await asyncio.sleep(1)
         i+=1
     print("done")
 class ManualRead():
@@ -165,13 +165,13 @@ class ManualRead():
     # Defines
     #region
     # Sets the PCANHandle (Hardware Channel)
-    PcanHandle = PCAN_USBBUS1
+    PcanHandle = PCAN_USBBUS1 # type: ignore
 
     # Sets the desired connection mode (CAN = false / CAN-FD = true)
     IsFD = False
 
     # Sets the bitrate for normal CAN devices
-    Bitrate = PCAN_BAUD_500K
+    Bitrate = PCAN_BAUD_500K # type: ignore
 
     # Sets the bitrate for CAN FD devices.  
     # Example - Bitrate Nom: 1Mbit/s Data: 2Mbit/s:
@@ -193,9 +193,9 @@ class ManualRead():
         Create an object starts the programm
         """
         self.inter = interactive
-        self.msgCanMessage = TPCANMsg()
+        self.msgCanMessage = TPCANMsg() # type: ignore
         self.msgCanMessage.LEN = 8
-        self.msgCanMessage.MSGTYPE = PCAN_MESSAGE_EXTENDED.value
+        self.msgCanMessage.MSGTYPE = PCAN_MESSAGE_EXTENDED.value # type: ignore
         self.ShowConfigurationHelp() ## Shows information about this sample
         self.ShowCurrentConfiguration() ## Shows the current parameters configuration
         self.c = 0
@@ -216,7 +216,7 @@ class ManualRead():
 
         ## Checks if PCANBasic.dll is available, if not, the program terminates
         try:
-            self.m_objPCANBasic = PCANBasic()
+            self.m_objPCANBasic = PCANBasic() # type: ignore
             self.m_DLLFound = True
         except :
             logger.debug("Unable to find the library: PCANBasic.dll !")
@@ -231,7 +231,7 @@ class ManualRead():
         else:
             stsResult = self.m_objPCANBasic.Initialize(self.PcanHandle,self.Bitrate)
 
-        if stsResult != PCAN_ERROR_OK:
+        if stsResult != PCAN_ERROR_OK: # type: ignore
             logger.debug("Can not initialize. Please check the defines in the code.")
             self.ShowStatus(stsResult)
             logger.debug("")
@@ -245,84 +245,105 @@ class ManualRead():
             self.read() # type: ignore
     
     async def read(self, error_list):
-        strinput = "y"
-        i = 0
-        t0 = time.time()
-        while strinput == "y" and (time.time() - t0) < 11:
-            await asyncio.sleep(0)
-            self.clear()
-            self.ReadMessages(i)
-        sum = 0
-        for message in self.messages:
-            if message.prio != 'No Match':
-                for node in NODE_ADRESSES:
-                    for msg_id in P1_MESSAGE_IDS:
-                        if message.node == node:
-                            if message.id == msg_id:
-                                if message.id == 'P1_MSG_EMCY':
-                                    del self.all[message.prio][message.node][message.id]
-                                    self.all[message.prio][message.node][message.id] = {'DATA' : message.data}
-                                    self.handle_data(message, error_list)
-                                else:
+        try:
+            strinput = "y"
+            i = 0
+            t0 = time.time()
+            while strinput == "y" and (time.time() - t0) < 19:
+                await asyncio.sleep(0)
+                self.clear()
+                self.ReadMessages(i)
+            sum = 0
+            error = False
+            for message in self.messages:
+                if message.prio != 'No Match':
+                    for node in NODE_ADRESSES:
+                        for msg_id in P1_MESSAGE_IDS:
+                            if message.node == node:
+                                if message.id == msg_id:
+                                    if message.id == 'P1_MSG_EMCY':
+                                        del self.all[message.prio][message.node][message.id]
+                                        self.all[message.prio][message.node][message.id] = {'DATA' : message.data}
+                                        error = True
+                                        self.handle_data(message, error_list)
+                                    else:
+                                        self.all[message.prio][message.node][message.id] += 1
+                        for msg_id in P3_MESSAGE_IDS:
+                            if message.node == node:
+                                if message.id == msg_id:
                                     self.all[message.prio][message.node][message.id] += 1
-                    for msg_id in P3_MESSAGE_IDS:
-                        if message.node == node:
-                            if message.id == msg_id:
-                                self.all[message.prio][message.node][message.id] += 1
-            else:
-                self.all[message.prio] += 1
-        for prio in self.all:
-            if prio != 'No Match':
-                logger.debug(f'\n{prio}\n----------------------')
-                for node in self.all[prio]:
-                    logger.debug(node)
-                    for id in self.all[prio][node]:
-                        if id != 'P1_MSG_EMCY':
-                            sum += self.all[prio][node][id]
-                            logger.debug(f'{id}: {self.all[prio][node][id]}')
-                    self.all[prio][node]['Summe'] = sum
-                    logger.debug(f"Gesamt: {self.all[prio][node]['Summe']}")
-                    logger.debug("-------------------------")
-                    sum = 0
-            else:
-                logger.debug(f'\n{prio}: {self.all[prio]}')
-        if self.inter:
-            with open('komp_pruefstand/static/can.txt','w') as file:
-                file.write(json.dumps(self.all, indent=4))
-        logger.debug("-------------------------")
-        for message in self.messages:
-            if message.id == 'P1_MSG_EMCY':
-                print(message)
-                # self.all[message.prio][message.node][message.id]['Data'] = message.data
-            if message.prio == 'Prio1' and message.node == 'DISPLAY' and message.id == 'P1_MSG_EMCY':
-                    print(message)
-        return self.all
+                else:
+                    self.all[message.prio] += 1
+            for prio in self.all:
+                if prio != 'No Match' and prio != 'EMCY':
+                    logger.debug(f'\n{prio}\n----------------------')
+                    for node in self.all[prio]:
+                        logger.debug(node)
+                        for id in self.all[prio][node]:
+                            if id != 'P1_MSG_EMCY':
+                                sum += self.all[prio][node][id]
+                                logger.debug(f'{id}: {self.all[prio][node][id]}')
+                        self.all[prio][node]['Summe'] = sum
+                        logger.debug(f"Gesamt: {self.all[prio][node]['Summe']}")
+                        logger.debug("-------------------------")
+                        sum = 0
+                else:
+                    logger.debug(f'\n{prio}: {self.all[prio]}')
+            if self.inter:
+                with open('komp_pruefstand/static/can.txt','w') as file:
+                    file.write(json.dumps(self.all, indent=4))
+            logger.debug("-------------------------")
+            for message in self.messages:
+                if message.id == 'P1_MSG_EMCY':
+                    logger.debug(message)
+                    # self.all[message.prio][message.node][message.id]['Data'] = message.data
+                if message.prio == 'Prio1' and message.node == 'DISPLAY' and message.id == 'P1_MSG_EMCY':
+                        logger.debug(message)
+            return self.all, error
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1] # type: ignore
+            logger.debug(exc_type, fname, exc_tb.tb_lineno, e) # type: ignore
         
     def handle_data(self, message, csv):
-        data = (self.all[message.prio][message.node][message.id]['DATA']).replace(" ", "")
-        f = []
-        for r in range(2, 18, 2): 
-            f.append(data[r-2:r])
-            # f.append(int(hex(int(data[r-2:r], 16)),16))
-        code = [f'{f[1]}{f[0]}']
-        group = hex(int(f[2], 16))
-        comp = hex(int(f[3], 16))
-        code = int(hex(int(code[0], 16)),16)
-        self.all[message.prio][message.node][message.id]['Fehlerbeschreibung'] = csv.loc[(csv['CODE'] == str(code)) & (csv['GROUP'] == str(group)), 'Fehlerbeschreibung'].values[0]
-        self.all[message.prio][message.node][message.id]['Komponentefehlerbezeichnung'] = csv.loc[(csv['CODE'] == str(code)) & (csv['GROUP'] == str(group)), 'Komponentefehlerbezeichnung'].values[0]
-        self.all[message.prio][message.node][message.id]['Komponentenfehlernummer'] = csv.loc[(csv['CODE'] == str(code)), 'Komponentenfehlernummer'].values[0]
-        self.all[message.prio][message.node][message.id]['Fehlerkomponente'] = csv.loc[(csv['COMP'] == str(comp)), 'Fehlerkomponente'].values[0]
-        self.all[message.prio][message.node][message.id]['Fehlergruppe'] = csv.loc[(csv['GROUP'] == str(group)) & (csv['CODE'] == str(code)), 'Fehlergruppe'].values[0]
-        self.all[message.prio][message.node][message.id]['Schweregrad'] = csv.loc[(csv['GROUP'] == str(group)) & (csv['CODE'] == str(code)), 'Schweregrad'].values[0]
-        self.all[message.prio][message.node][message.id]['Fehlerbeschreibung'] = csv.loc[(csv['CODE'] == str(code)) & (csv['GROUP'] == str(group)), 'Fehlerbeschreibung'].values[0]
-        d = csv.loc[(csv['GROUP'] == str(group)) & (csv['CODE'] == str(code)), 'Mögliche Fehlerursache'].values[0]
-        if "\n" in d:
-            self.all[message.prio][message.node][message.id]['Mögliche Fehlerursache'] = d.splitlines()
-        self.all[message.prio][message.node][message.id]['Displayanzeige'] = csv.loc[(csv['GROUP'] == str(group)) & (csv['CODE'] == str(code)), 'Displayanzeige'].values[0]
+        try:
+            data = (self.all[message.prio][message.node][message.id]['DATA']).replace(" ", "")
+            f = []
+            for r in range(2, 18, 2): 
+                f.append(data[r-2:r])
+                # f.append(int(hex(int(data[r-2:r], 16)),16))
+            code = [f'{f[1]}{f[0]}']
+            group = hex(int(f[2], 16))
+            comp = hex(int(f[3], 16))
+            code = int(hex(int(code[0], 16)),16)
+            self.all[message.prio][message.node][message.id]['CODE'] = code
+            self.all[message.prio][message.node][message.id]['GROUP'] = group
+            self.all[message.prio][message.node][message.id]['COMP'] = comp
+            self.all['EMCY'] = {}
+            self.all['EMCY']['Fehler Reporter'] = message.node
+            self.all['EMCY']['Level'] = csv.loc[(csv['CODE'] == str(code)) & (csv['GROUP'] == str(group)), 'Level'].values[0]
+            self.all['EMCY']['Komponentenfehlernummer'] = csv.loc[(csv['CODE'] == str(code)), 'Komponentenfehlernummer'].values[0]
+            for er_comp in FEHLERKOMPONENTEN:
+                if FEHLERKOMPONENTEN[er_comp]['Hex'] == comp:
+                    self.all['EMCY']['Fehlerkomponente'] = FEHLERKOMPONENTEN[er_comp]['Short']
+            for er_comp in FEHLERGRUPPEN:
+                if FEHLERGRUPPEN[er_comp]['Hex'] == group:
+                    self.all['EMCY']['Fehlergruppe'] = FEHLERGRUPPEN[er_comp]['Short']
+            self.all['EMCY']['Schweregrad'] = csv.loc[(csv['GROUP'] == str(group)) & (csv['CODE'] == str(code)), 'Schweregrad'].values[0]
+            self.all['EMCY']['Fehlerbeschreibung'] = csv.loc[(csv['CODE'] == str(code)) & (csv['GROUP'] == str(group)), 'Fehlerbeschreibung'].values[0]
+            d = csv.loc[(csv['GROUP'] == str(group)) & (csv['CODE'] == str(code)), 'Mögliche Fehlerursache'].values[0]
+            if "\n" in d:
+                self.all['EMCY']['Mögliche Fehlerursache'] = d.splitlines()
+            self.all['EMCY']['Displayanzeige'] = csv.loc[(csv['GROUP'] == str(group)) & (csv['CODE'] == str(code)), 'Displayanzeige'].values[0]
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1] # type: ignore
+            logger.debug(exc_type, fname, exc_tb.tb_lineno, e) # type: ignore
+        
     
     def __del__(self):
         if self.m_DLLFound:
-            self.m_objPCANBasic.Uninitialize(PCAN_NONEBUS)
+            self.m_objPCANBasic.Uninitialize(PCAN_NONEBUS) # type: ignore
 
     def getInput(self, msg="Press <Enter> to continue...", default=""):
         res = default
@@ -340,16 +361,16 @@ class ManualRead():
         """
         Function for reading PCAN-Basic messages
         """
-        stsResult = PCAN_ERROR_OK
+        stsResult = PCAN_ERROR_OK # type: ignore
 
         ## We read at least one time the queue looking for messages. If a message is found, we look again trying to 
         ## find more. If the queue is empty or an error occurr, we get out from the dowhile statement.
-        while (not (stsResult & PCAN_ERROR_QRCVEMPTY)):
+        while (not (stsResult & PCAN_ERROR_QRCVEMPTY)): # type: ignore
             if self.IsFD:
                 stsResult = self.ReadMessageFD()
             else:
                 stsResult = self.ReadMessage(i)
-            if stsResult != PCAN_ERROR_OK and stsResult != PCAN_ERROR_QRCVEMPTY:
+            if stsResult != PCAN_ERROR_OK and stsResult != PCAN_ERROR_QRCVEMPTY: # type: ignore
                 self.ShowStatus(stsResult)
                 return
 
@@ -363,7 +384,7 @@ class ManualRead():
         ## We execute the "Read" function of the PCANBasic   
         stsResult = self.m_objPCANBasic.Read(self.PcanHandle)
 
-        if stsResult[0] == PCAN_ERROR_OK:
+        if stsResult[0] == PCAN_ERROR_OK: # type: ignore
             self.ProcessMessageCan(stsResult[1],stsResult[2], i)
             
         return stsResult[0]
@@ -378,7 +399,7 @@ class ManualRead():
         ## We execute the "Read" function of the PCANBasic    
         stsResult = self.m_objPCANBasic.ReacsvD(self.PcanHandle)
 
-        if stsResult[0] == PCAN_ERROR_OK:
+        if stsResult[0] == PCAN_ERROR_OK: # type: ignore
             ## We show the received message
             self.ProcessMessageCanFd(stsResult[1],stsResult[2])
             
@@ -496,16 +517,16 @@ class ManualRead():
         """
         handleValue = handle.value
         if handleValue < 0x100:
-            devDevice = TPCANDevice(handleValue >> 4)
+            devDevice = TPCANDevice(handleValue >> 4) # type: ignore
             byChannel = handleValue & 0xF
         else:
-            devDevice = TPCANDevice(handleValue >> 8)
+            devDevice = TPCANDevice(handleValue >> 8) # type: ignore
             byChannel = handleValue & 0xFF
 
         if isFD:
-           return ('%s:FD %s (%.2X)' % (GetDeviceName(devDevice.value), byChannel, handleValue))
+            return ('%s:FD %s (%.2X)' % (GetDeviceName(devDevice.value), byChannel, handleValue))
         else:
-           return ('%s %s (%.2X)' % (GetDeviceName(devDevice.value), byChannel, handleValue))
+            return ('%s %s (%.2X)' % (GetDeviceName(devDevice.value), byChannel, handleValue))
 
     def GetFormattedError(self, error):
         """
@@ -520,7 +541,7 @@ class ManualRead():
         ## Gets the text using the GetErrorText API function. If the function success, the translated error is returned.
         ## If it fails, a text describing the current error is returned.
         stsReturn = self.m_objPCANBasic.GetErrorText(error,0x09)
-        if stsReturn[0] != PCAN_ERROR_OK:
+        if stsReturn[0] != PCAN_ERROR_OK: # type: ignore
             return "An error occurred. Error-code's text ({0:X}h) couldn't be retrieved".format(error)
         else:
             message = str(stsReturn[1])
@@ -564,7 +585,7 @@ def GetIdString(id, msgtype):
     Returns:
         Hexadecimal representation of the ID of a CAN message
     """
-    if (msgtype & PCAN_MESSAGE_EXTENDED.value) == PCAN_MESSAGE_EXTENDED.value:
+    if (msgtype & PCAN_MESSAGE_EXTENDED.value) == PCAN_MESSAGE_EXTENDED.value: # type: ignore
         return '%.8X' %id
     else:
         return '%.3X' %id
@@ -592,27 +613,27 @@ def GetTypeString(msgtype):
     Returns:
         The type of the CAN message as string
     """
-    if (msgtype & PCAN_MESSAGE_STATUS.value) == PCAN_MESSAGE_STATUS.value:
+    if (msgtype & PCAN_MESSAGE_STATUS.value) == PCAN_MESSAGE_STATUS.value: # type: ignore
         return 'STATUS'
     
-    if (msgtype & PCAN_MESSAGE_ERRFRAME.value) == PCAN_MESSAGE_ERRFRAME.value:
+    if (msgtype & PCAN_MESSAGE_ERRFRAME.value) == PCAN_MESSAGE_ERRFRAME.value: # type: ignore
         return 'ERROR'        
     
-    if (msgtype & PCAN_MESSAGE_EXTENDED.value) == PCAN_MESSAGE_EXTENDED.value:
+    if (msgtype & PCAN_MESSAGE_EXTENDED.value) == PCAN_MESSAGE_EXTENDED.value: # type: ignore
         strTemp = 'EXT'
     else:
         strTemp = 'STD'
 
-    if (msgtype & PCAN_MESSAGE_RTR.value) == PCAN_MESSAGE_RTR.value:
+    if (msgtype & PCAN_MESSAGE_RTR.value) == PCAN_MESSAGE_RTR.value: # type: ignore
         strTemp += '/RTR'
     else:
-        if (msgtype > PCAN_MESSAGE_EXTENDED.value):
+        if (msgtype > PCAN_MESSAGE_EXTENDED.value): # type: ignore
             strTemp += ' ['
-            if (msgtype & PCAN_MESSAGE_FD.value) == PCAN_MESSAGE_FD.value:
+            if (msgtype & PCAN_MESSAGE_FD.value) == PCAN_MESSAGE_FD.value: # type: ignore
                 strTemp += ' FD'
-            if (msgtype & PCAN_MESSAGE_BRS.value) == PCAN_MESSAGE_BRS.value:                    
+            if (msgtype & PCAN_MESSAGE_BRS.value) == PCAN_MESSAGE_BRS.value:          # type: ignore           
                 strTemp += ' BRS'
-            if (msgtype & PCAN_MESSAGE_ESI.value) == PCAN_MESSAGE_ESI.value:
+            if (msgtype & PCAN_MESSAGE_ESI.value) == PCAN_MESSAGE_ESI.value: # type: ignore
                 strTemp += ' ESI'
             strTemp += ' ]'
             
@@ -629,7 +650,7 @@ def GetDataString(data, msgtype):
     Returns:
         A string with hexadecimal formatted data bytes of a CAN message
     """
-    if (msgtype & PCAN_MESSAGE_RTR.value) == PCAN_MESSAGE_RTR.value:
+    if (msgtype & PCAN_MESSAGE_RTR.value) == PCAN_MESSAGE_RTR.value: # type: ignore
         return "Remote Request"
     else:
         strTemp = b""
@@ -648,13 +669,13 @@ def GetDeviceName(handle):
         The name of the handle
     """
     switcher = {
-        PCAN_NONEBUS.value: "PCAN_NONEBUS",
-        PCAN_PEAKCAN.value: "PCAN_PEAKCAN",
-        PCAN_DNG.value: "PCAN_DNG",
-        PCAN_PCI.value: "PCAN_PCI",
-        PCAN_USB.value: "PCAN_USB",
-        PCAN_VIRTUAL.value: "PCAN_VIRTUAL",
-        PCAN_LAN.value: "PCAN_LAN"
+        PCAN_NONEBUS.value: "PCAN_NONEBUS", # type: ignore
+        PCAN_PEAKCAN.value: "PCAN_PEAKCAN", # type: ignore
+        PCAN_DNG.value: "PCAN_DNG", # type: ignore
+        PCAN_PCI.value: "PCAN_PCI", # type: ignore
+        PCAN_USB.value: "PCAN_USB", # type: ignore
+        PCAN_VIRTUAL.value: "PCAN_VIRTUAL", # type: ignore
+        PCAN_LAN.value: "PCAN_LAN" # type: ignore
     }
 
     return switcher.get(handle,"UNKNOWN")   
@@ -669,10 +690,10 @@ def ConvertBitrateToString(bitrate):
     Returns:
         A text with the converted bitrate
     """
-    m_BAUDRATES = {PCAN_BAUD_1M.value:'1 MBit/sec', PCAN_BAUD_800K.value:'800 kBit/sec', PCAN_BAUD_500K.value:'500 kBit/sec', PCAN_BAUD_250K.value:'250 kBit/sec',
-                    PCAN_BAUD_125K.value:'125 kBit/sec', PCAN_BAUD_100K.value:'100 kBit/sec', PCAN_BAUD_95K.value:'95,238 kBit/sec', PCAN_BAUD_83K.value:'83,333 kBit/sec',
-                    PCAN_BAUD_50K.value:'50 kBit/sec', PCAN_BAUD_47K.value:'47,619 kBit/sec', PCAN_BAUD_33K.value:'33,333 kBit/sec', PCAN_BAUD_20K.value:'20 kBit/sec',
-                    PCAN_BAUD_10K.value:'10 kBit/sec', PCAN_BAUD_5K.value:'5 kBit/sec'}
+    m_BAUDRATES = {PCAN_BAUD_1M.value:'1 MBit/sec', PCAN_BAUD_800K.value:'800 kBit/sec', PCAN_BAUD_500K.value:'500 kBit/sec', PCAN_BAUD_250K.value:'250 kBit/sec', # type: ignore
+                    PCAN_BAUD_125K.value:'125 kBit/sec', PCAN_BAUD_100K.value:'100 kBit/sec', PCAN_BAUD_95K.value:'95,238 kBit/sec', PCAN_BAUD_83K.value:'83,333 kBit/sec', # type: ignore
+                    PCAN_BAUD_50K.value:'50 kBit/sec', PCAN_BAUD_47K.value:'47,619 kBit/sec', PCAN_BAUD_33K.value:'33,333 kBit/sec', PCAN_BAUD_20K.value:'20 kBit/sec', # type: ignore
+                    PCAN_BAUD_10K.value:'10 kBit/sec', PCAN_BAUD_5K.value:'5 kBit/sec'}  # type: ignore
     return m_BAUDRATES[bitrate.value]
 
 def ConvertBytesToString(bytes):

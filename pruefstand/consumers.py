@@ -156,7 +156,7 @@ class ModBusRelay():
         """
         await self.up_button('on', 1)
         await self.up_button('off', 0.5)
-        await self.up_button('on', 10)
+        await self.up_button('on', 12.5)
         await self.up_button('off')
 
 ####################################################################################################################
@@ -311,7 +311,7 @@ class TestConsumer(AsyncWebsocketConsumer):
         """
         for x in range(1, 100):
             if self.running:
-                await asyncio.sleep(0.17)
+                await asyncio.sleep(0.185)
                 await self._send("progress", x)
     
     async def wake_and_walk(self):
@@ -328,11 +328,13 @@ class TestConsumer(AsyncWebsocketConsumer):
         try:
             asyncio.create_task(self.loading_bar())
             asyncio.create_task(self.wake_and_walk())
-            await asyncio.sleep(7)
-            self.results[f'Test{index}'] = await ManualRead().read(self.error_list)
+            #await asyncio.sleep(7)
+            self.results[f'Test{index}'], error = await ManualRead().read(self.error_list)
             self.results[f'Test{index}']['Komponenten'] = component
             self.find_names(index)
             await self._send("progress", 100)
+            if error:
+                self.results['EMCY'] = True
             if index == len(self.combinations):
                 print('Alle Kombinatoriken geschalten')
                 await self._send("done")
@@ -617,6 +619,12 @@ class TestConsumer(AsyncWebsocketConsumer):
                 results[f'{i}'] = {}
                 results[f'{i}']['filename'] = self.filenames[i]
                 results[f'{i}']['created_at'] = os.path.getatime(filename)
+                with open(f'{filename}', 'r') as file:
+                    t = yaml.safe_load(file)
+                    if 'EMCY' in t:
+                        results[f'{i}']['emcy'] = True
+                    else:
+                        results[f'{i}']['emcy'] = False
             await self._send("results", results)
         except Exception as e:
             show_error(e)
