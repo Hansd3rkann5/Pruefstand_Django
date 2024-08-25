@@ -164,7 +164,6 @@ class ModBusRelay():
 # Klasse für Kommunikation zwischen Server und Client
 class TestConsumer(AsyncWebsocketConsumer):
     test:list[str] = []
-    combinations:list[tuple] = []
     index = 1
     error_list = pd.DataFrame(pd.read_csv('/home/simonbader/Coding/Fehlerliste.csv', sep=';', dtype=str))
     group = 'tq'
@@ -175,6 +174,7 @@ class TestConsumer(AsyncWebsocketConsumer):
         # Variable zur Kommunikation mit 32CH-Relais-Block
         self.modbus = ModBusRelay()
         #self.combinations:list[list[int | None]] = []
+        self.combinations:list[tuple] = []
         # self.combinations:list[tuple] = []
         # Array, in welchem die Nutzerwahl der Testart abgespeichert wird
         # self.test:list[str] = []
@@ -266,9 +266,12 @@ class TestConsumer(AsyncWebsocketConsumer):
             if type == "Master-File":
                 print("Master-File recieved")
                 master = text_data_json["text"]
-                f = open("komp_pruefstand/static/Komponenten.yaml", "w")
-                f.write(master)
-                f.close()
+                if master[:5] == 'Motor':
+                    with open("komp_pruefstand/static/Komponenten.yaml", "w") as f:
+                        f.write(master)
+                else:
+                    with open("/home/simonbader/Coding/Fehlerliste.csv", 'w') as csv:
+                        csv.write(master)
                 await self.send_master()
             if type == "next":
                 await asyncio.sleep(0.05)
