@@ -13,6 +13,7 @@ from binascii import unhexlify
 from threading import Thread
 import crc16
 import json
+import pandas as pd
 
 
 
@@ -242,9 +243,10 @@ class ManualRead():
         logger.debug("Successfully initialized.")
         if interactive:
             self.getInput("Press <Enter> to read...")
-            self.read() # type: ignore
+            self.read(pd.DataFrame(pd.read_csv('/home/simonbader/Coding/Fehlerliste.csv', sep=';', dtype=str)))  # type: ignore
     
     async def read(self, error_list):
+    # def read(self, error_list):
         try:
             strinput = "y"
             i = 0
@@ -266,7 +268,10 @@ class ManualRead():
                                         self.all[message.prio][message.node][message.id] = {'DATA' : message.data}
                                         error = True
                                         self.handle_data(message, error_list)
-                                    else:
+                                    if message.id == 'P1_MSG_EMCYOFF':
+                                        del self.all[message.prio][message.node][message.id]
+                                        self.all[message.prio][message.node][message.id] = {'DATA' : message.data}
+                                    if self.all[message.prio][message.node][message.id] == int:
                                         self.all[message.prio][message.node][message.id] += 1
                         for msg_id in P3_MESSAGE_IDS:
                             if message.node == node:
@@ -274,6 +279,8 @@ class ManualRead():
                                     self.all[message.prio][message.node][message.id] += 1
                 else:
                     self.all[message.prio] += 1
+            print("here")
+            print(self.all)                
             for prio in self.all:
                 if prio != 'No Match' and prio != 'EMCY':
                     logger.debug(f'\n{prio}\n----------------------')
@@ -306,6 +313,7 @@ class ManualRead():
             logger.debug(exc_type, fname, exc_tb.tb_lineno, e) # type: ignore
         
     def handle_data(self, message, csv):
+        print("self.all")
         try:
             data = (self.all[message.prio][message.node][message.id]['DATA']).replace(" ", "")
             f = []
@@ -316,9 +324,9 @@ class ManualRead():
             group = hex(int(f[2], 16))
             comp = hex(int(f[3], 16))
             code = int(hex(int(code[0], 16)),16)
-            self.all[message.prio][message.node][message.id]['CODE'] = code
-            self.all[message.prio][message.node][message.id]['GROUP'] = group
-            self.all[message.prio][message.node][message.id]['COMP'] = comp
+            self.all[message.prio][message.node][message.id]['ECODE'] = code
+            self.all[message.prio][message.node][message.id]['EGROUP'] = group
+            self.all[message.prio][message.node][message.id]['ECOMP'] = comp
             self.all['EMCY'] = {}
             self.all['EMCY']['Fehler Reporter'] = message.node
             self.all['EMCY']['Level'] = csv.loc[(csv['CODE'] == str(code)) & (csv['GROUP'] == str(group)), 'Level'].values[0]

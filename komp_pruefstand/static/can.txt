@@ -2,7 +2,7 @@
     "Prio1": {
         "MOTORSTEUERUNG": {
             "P1_MSG_EMCYOFF": 0,
-            "P1_MSG_EMCY": {},
+            "P1_MSG_EMCY": 0,
             "P1_MSG_SYNC": 0,
             "P1_MSG_PRIO_BROADCAST": 0,
             "P1_MSG_REPLPD": 0,
@@ -17,7 +17,7 @@
         },
         "SCHIEBEHILFEGERAET": {
             "P1_MSG_EMCYOFF": 0,
-            "P1_MSG_EMCY": {},
+            "P1_MSG_EMCY": 0,
             "P1_MSG_SYNC": 0,
             "P1_MSG_PRIO_BROADCAST": 0,
             "P1_MSG_REPLPD": 0,
@@ -32,7 +32,7 @@
         },
         "BMS": {
             "P1_MSG_EMCYOFF": 0,
-            "P1_MSG_EMCY": {},
+            "P1_MSG_EMCY": 0,
             "P1_MSG_SYNC": 0,
             "P1_MSG_PRIO_BROADCAST": 0,
             "P1_MSG_REPLPD": 0,
@@ -42,12 +42,42 @@
             "P1_MSG_INFO": 0,
             "P1_MSG_WARNING": 0,
             "P1_MSG_BROADCAST": 0,
-            "P1_MSG_SLAVECHG": 1,
-            "Summe": 1
+            "P1_MSG_SLAVECHG": 0,
+            "Summe": 0
+        },
+        "HAUPTBATTERIE": {
+            "P1_MSG_EMCYOFF": 0,
+            "P1_MSG_EMCY": 0,
+            "P1_MSG_SYNC": 0,
+            "P1_MSG_PRIO_BROADCAST": 0,
+            "P1_MSG_REPLPD": 0,
+            "P1_MSG_REPLSD": 0,
+            "P1_MSG_ACKNPD": 0,
+            "P1_MSG_ACKNSD": 0,
+            "P1_MSG_INFO": 0,
+            "P1_MSG_WARNING": 0,
+            "P1_MSG_BROADCAST": 0,
+            "P1_MSG_SLAVECHG": 0,
+            "Summe": 0
         },
         "LADEPORT": {
             "P1_MSG_EMCYOFF": 0,
-            "P1_MSG_EMCY": {},
+            "P1_MSG_EMCY": 0,
+            "P1_MSG_SYNC": 0,
+            "P1_MSG_PRIO_BROADCAST": 0,
+            "P1_MSG_REPLPD": 0,
+            "P1_MSG_REPLSD": 0,
+            "P1_MSG_ACKNPD": 0,
+            "P1_MSG_ACKNSD": 0,
+            "P1_MSG_INFO": 0,
+            "P1_MSG_WARNING": 0,
+            "P1_MSG_BROADCAST": 0,
+            "P1_MSG_SLAVECHG": 0,
+            "Summe": 0
+        },
+        "RANGE_EXTENDER": {
+            "P1_MSG_EMCYOFF": 0,
+            "P1_MSG_EMCY": 0,
             "P1_MSG_SYNC": 0,
             "P1_MSG_PRIO_BROADCAST": 0,
             "P1_MSG_REPLPD": 0,
@@ -62,7 +92,6 @@
         },
         "DISPLAY": {
             "P1_MSG_EMCYOFF": 0,
-            "P1_MSG_EMCY": {},
             "P1_MSG_SYNC": 0,
             "P1_MSG_PRIO_BROADCAST": 0,
             "P1_MSG_REPLPD": 0,
@@ -71,13 +100,19 @@
             "P1_MSG_ACKNSD": 0,
             "P1_MSG_INFO": 0,
             "P1_MSG_WARNING": 0,
-            "P1_MSG_BROADCAST": 1,
-            "P1_MSG_SLAVECHG": 2,
-            "Summe": 3
+            "P1_MSG_BROADCAST": 0,
+            "P1_MSG_SLAVECHG": 0,
+            "P1_MSG_EMCY": {
+                "DATA": "01 54 04 01 00 00 00 00 ",
+                "ECODE": 21505,
+                "EGROUP": "0x4",
+                "ECOMP": "0x1"
+            },
+            "Summe": 0
         },
         "LICHT": {
             "P1_MSG_EMCYOFF": 0,
-            "P1_MSG_EMCY": {},
+            "P1_MSG_EMCY": 0,
             "P1_MSG_SYNC": 0,
             "P1_MSG_PRIO_BROADCAST": 0,
             "P1_MSG_REPLPD": 0,
@@ -92,7 +127,7 @@
         },
         "ECONNECT": {
             "P1_MSG_EMCYOFF": 0,
-            "P1_MSG_EMCY": {},
+            "P1_MSG_EMCY": 0,
             "P1_MSG_SYNC": 0,
             "P1_MSG_PRIO_BROADCAST": 0,
             "P1_MSG_REPLPD": 0,
@@ -107,7 +142,7 @@
         },
         "GPSTUNER": {
             "P1_MSG_EMCYOFF": 0,
-            "P1_MSG_EMCY": {},
+            "P1_MSG_EMCY": 0,
             "P1_MSG_SYNC": 0,
             "P1_MSG_PRIO_BROADCAST": 0,
             "P1_MSG_REPLPD": 0,
@@ -122,22 +157,7 @@
         },
         "SMARTBOX": {
             "P1_MSG_EMCYOFF": 0,
-            "P1_MSG_EMCY": {},
-            "P1_MSG_SYNC": 0,
-            "P1_MSG_PRIO_BROADCAST": 0,
-            "P1_MSG_REPLPD": 0,
-            "P1_MSG_REPLSD": 0,
-            "P1_MSG_ACKNPD": 0,
-            "P1_MSG_ACKNSD": 0,
-            "P1_MSG_INFO": 0,
-            "P1_MSG_WARNING": 0,
-            "P1_MSG_BROADCAST": 0,
-            "P1_MSG_SLAVECHG": 2,
-            "Summe": 2
-        },
-        "SERVICEMODUL": {
-            "P1_MSG_EMCYOFF": 0,
-            "P1_MSG_EMCY": {},
+            "P1_MSG_EMCY": 0,
             "P1_MSG_SYNC": 0,
             "P1_MSG_PRIO_BROADCAST": 0,
             "P1_MSG_REPLPD": 0,
@@ -150,9 +170,39 @@
             "P1_MSG_SLAVECHG": 0,
             "Summe": 0
         },
-        "ENTWICKLUNGSTOOLS": {
+        "SERVICE_DONGLE": {
             "P1_MSG_EMCYOFF": 0,
-            "P1_MSG_EMCY": {},
+            "P1_MSG_EMCY": 0,
+            "P1_MSG_SYNC": 0,
+            "P1_MSG_PRIO_BROADCAST": 0,
+            "P1_MSG_REPLPD": 0,
+            "P1_MSG_REPLSD": 0,
+            "P1_MSG_ACKNPD": 0,
+            "P1_MSG_ACKNSD": 0,
+            "P1_MSG_INFO": 0,
+            "P1_MSG_WARNING": 0,
+            "P1_MSG_BROADCAST": 0,
+            "P1_MSG_SLAVECHG": 0,
+            "Summe": 0
+        },
+        "SERVICEMODUL": {
+            "P1_MSG_EMCYOFF": 0,
+            "P1_MSG_EMCY": 0,
+            "P1_MSG_SYNC": 0,
+            "P1_MSG_PRIO_BROADCAST": 0,
+            "P1_MSG_REPLPD": 0,
+            "P1_MSG_REPLSD": 0,
+            "P1_MSG_ACKNPD": 0,
+            "P1_MSG_ACKNSD": 0,
+            "P1_MSG_INFO": 0,
+            "P1_MSG_WARNING": 0,
+            "P1_MSG_BROADCAST": 0,
+            "P1_MSG_SLAVECHG": 0,
+            "Summe": 0
+        },
+        "ENTWICKLUNGSTOOL": {
+            "P1_MSG_EMCYOFF": 0,
+            "P1_MSG_EMCY": 0,
             "P1_MSG_SYNC": 0,
             "P1_MSG_PRIO_BROADCAST": 0,
             "P1_MSG_REPLPD": 0,
@@ -188,7 +238,21 @@
             "P3_MSG_SDW": 0,
             "Summe": 0
         },
+        "HAUPTBATTERIE": {
+            "P3_MSG_PDR": 0,
+            "P3_MSG_PDW": 0,
+            "P3_MSG_SDR": 0,
+            "P3_MSG_SDW": 0,
+            "Summe": 0
+        },
         "LADEPORT": {
+            "P3_MSG_PDR": 0,
+            "P3_MSG_PDW": 0,
+            "P3_MSG_SDR": 0,
+            "P3_MSG_SDW": 0,
+            "Summe": 0
+        },
+        "RANGE_EXTENDER": {
             "P3_MSG_PDR": 0,
             "P3_MSG_PDW": 0,
             "P3_MSG_SDR": 0,
@@ -230,6 +294,13 @@
             "P3_MSG_SDW": 0,
             "Summe": 0
         },
+        "SERVICE_DONGLE": {
+            "P3_MSG_PDR": 0,
+            "P3_MSG_PDW": 0,
+            "P3_MSG_SDR": 0,
+            "P3_MSG_SDW": 0,
+            "Summe": 0
+        },
         "SERVICEMODUL": {
             "P3_MSG_PDR": 0,
             "P3_MSG_PDW": 0,
@@ -237,7 +308,7 @@
             "P3_MSG_SDW": 0,
             "Summe": 0
         },
-        "ENTWICKLUNGSTOOLS": {
+        "ENTWICKLUNGSTOOL": {
             "P3_MSG_PDR": 0,
             "P3_MSG_PDW": 0,
             "P3_MSG_SDR": 0,
@@ -245,5 +316,21 @@
             "Summe": 0
         }
     },
-    "No Match": 765
+    "No Match": 20,
+    "EMCY": {
+        "Fehler Reporter": "DISPLAY",
+        "Level": "Error",
+        "Komponentenfehlernummer": "1",
+        "Fehlerkomponente": "DRV",
+        "Fehlergruppe": "CONN",
+        "Schweregrad": "1",
+        "Fehlerbeschreibung": "Verbindung zu Motor verloren - Nachrichten Timeout",
+        "M\u00f6gliche Fehlerursache": [
+            "Verbindungsproblem zwischen Motor und Display",
+            "Nicht ordnungsgem\u00e4\u00df durchgef\u00fchrtes Update",
+            "Elektronikfehler Display",
+            "Elektronikfehler Motor"
+        ],
+        "Displayanzeige": "ERR 5401 DRV CONN"
+    }
 }

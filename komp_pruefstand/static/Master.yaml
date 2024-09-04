@@ -20,42 +20,39 @@ Motor:
   - name: Testmotor
     serial: null
     relay: 7
-Display:
-  - name: TQ
-    serial: "329589.0200"
-    relay: 8
-  - name: Trek
-    serial: "334496.0200"
-    relay: 9
-  - name: Barend
-    serial: "329589.0200"
-    relay: 10
-  - name: IOT
-    serial: null
-    relay: 11
-  - name: Full Color
-    serial: null
-    relay: 12
-  - name: null
-    serial: null
-    relay: 13
 Battery:
   - name: 360
     serial: null
-    relay: 14
+    relay: 8
   - name: 360
     serial: null
-    relay: 15
+    relay: 9
   - name: 360
     serial: null
-    relay: 16
+    relay: 10
   - name: 250
     serial: null
-    relay: 17
+    relay: 12
   - name: 290
     serial: null
-    relay: 18
+    relay: 12
   - name: 580
+    serial: null
+    relay: 13
+Display:
+  - name: TQ
+    serial: "329589.0200"
+    relay: 15
+  - name: Trek
+    serial: "334496.0200"
+    relay: 16
+  - name: Barend
+    serial: "329589.0200"
+    relay: 17
+  - name: IOT
+    serial: null
+    relay: 18
+  - name: Full Color
     serial: null
     relay: 19
   - name: null
@@ -85,9 +82,14 @@ Ladegerät/Service Dongle:
   - name: Ladegerät
     serial: "334498.0103"
     relay: 27
-  - name: null
-    serial: null
-    relay: 28
   - name: Service Dongle
     serial: null
+    relay: 28
+  - name: null
+    serial: null
     relay: 29
+# Reserve:
+  # - name: Reserve1
+      #relay: 14
+  # - name: Reserve1
+      #relay: 30
