@@ -279,8 +279,6 @@ class ManualRead():
                                     self.all[message.prio][message.node][message.id] += 1
                 else:
                     self.all[message.prio] += 1
-            print("here")
-            print(self.all)                
             for prio in self.all:
                 if prio != 'No Match' and prio != 'EMCY':
                     logger.debug(f'\n{prio}\n----------------------')
@@ -288,8 +286,10 @@ class ManualRead():
                         logger.debug(node)
                         for id in self.all[prio][node]:
                             if id != 'P1_MSG_EMCY':
-                                sum += self.all[prio][node][id]
-                                logger.debug(f'{id}: {self.all[prio][node][id]}')
+                                if self.all[prio][node][id] == int:
+                                    logger.debug(self.all[prio][node][id])
+                                    sum += self.all[prio][node][id]
+                                    logger.debug(f'{id}: {self.all[prio][node][id]}')
                         self.all[prio][node]['Summe'] = sum
                         logger.debug(f"Gesamt: {self.all[prio][node]['Summe']}")
                         logger.debug("-------------------------")
@@ -309,17 +309,16 @@ class ManualRead():
             return self.all, error
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1] # type: ignore
+            fname = os.path.sp--t(exc_tb.tb_frame.f_code.co_filename)[1] # type: ignore
             logger.debug(exc_type, fname, exc_tb.tb_lineno, e) # type: ignore
         
     def handle_data(self, message, csv):
-        print("self.all")
         try:
+            logger.debug(message)
             data = (self.all[message.prio][message.node][message.id]['DATA']).replace(" ", "")
             f = []
             for r in range(2, 18, 2): 
                 f.append(data[r-2:r])
-                # f.append(int(hex(int(data[r-2:r], 16)),16))
             code = [f'{f[1]}{f[0]}']
             group = hex(int(f[2], 16))
             comp = hex(int(f[3], 16))

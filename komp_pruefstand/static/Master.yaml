@@ -32,7 +32,7 @@ Battery:
     relay: 10
   - name: 250
     serial: null
-    relay: 12
+    relay: 11
   - name: 290
     serial: null
     relay: 12
@@ -88,8 +88,3 @@ Ladegerät/Service Dongle:
   - name: null
     serial: null
     relay: 29
-# Reserve:
-  # - name: Reserve1
-      #relay: 14
-  # - name: Reserve1
-      #relay: 30

@@ -1,12 +1,10 @@
 import asyncio
 import json
 import sys, os
+from argon2 import Type
 import serial
 import pruefstand.pycrc as pycrc
 import yaml
-import csv
-import io
-import numpy as np
 import itertools
 import re
 import glob
@@ -14,10 +12,7 @@ import pandas as pd
 from datetime import datetime as dt
 from pruefstand import pycrc
 from enum import Enum
-from django.http import JsonResponse
-from threading import Thread
 from typing import Literal
-from komp_pruefstand.views import download_file
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .PCAN.libpcanbasic.examples.console.Python.ManualRead.ManualRead import ManualRead
 
@@ -43,7 +38,6 @@ class ModBusRelay():
         # Byte fuer einen Flip eines Relais (on <-> off)
         self.FLIP = 0x55
         
-    # Alle Relais aus: 01 05 00 FF 00 00 FD FA
     async def reset_all(self):
         """
         Resets all the relays on the Modbus RTU Relay.
@@ -60,7 +54,6 @@ class ModBusRelay():
         except Exception as e:
             show_error(e)
     
-    # Funktion zum Schreiben der Nachrichten auf BUS
     def set_relays(self, id:int | None, state_request: Literal['on', 'off', 'flip']):
         """
         Function for writing on the CAN-Bus to the Modbus RTU Relay and setting the given relays.
@@ -90,7 +83,6 @@ class ModBusRelay():
         self.cmd[6] = crc & 0xFF
         self.cmd[7] = crc >> 8
         self.serial.write(self.cmd) # type: ignore
-        #print(self.cmd)
     
     async def up_button(self, state, wait = 0.0):
         """
@@ -163,29 +155,23 @@ class ModBusRelay():
 
 # Klasse für Kommunikation zwischen Server und Client
 class TestConsumer(AsyncWebsocketConsumer):
+    #Klassenvariablen
     test:list[str] = []
     index = 1
     error_list = pd.DataFrame(pd.read_csv('/home/simonbader/Coding/Fehlerliste.csv', sep=';', dtype=str))
     group = 'tq'
-    test:list[str] = []
     test_running = False
     combinations:list[tuple] = []
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Variable fuer 
+        #Instanzvariablen
         self.running = False
-        # Variable zur Kommunikation mit 32CH-Relais-Block
         self.modbus = ModBusRelay()
-        #self.combinations:list[list[int | None]] = []
-        # self.combinations:list[tuple] = []
-        # Array, in welchem die Nutzerwahl der Testart abgespeichert wird
-        # TestConsumer.test:list[str] = []
-        # Dictionary zum abspeichern der CAN-Bus-Ueberwachungsergebnisse 
         self.results = {}
+        self.results_list = {}
         self.path = '/home/simonbader/Coding/TestResults'
         self.filenames:list[str] = []
     
-    # Funktion zum Aufbau der Websocket-Verbindung
     async def connect(self):
         self.client_id = self.scope['client'][1]
         print(self.scope['client'][0][:3])
@@ -198,28 +184,25 @@ class TestConsumer(AsyncWebsocketConsumer):
             await self.send(event['message'])
             await self.reset_vars()
     
-    # Funktion zum Trennen der Websocket-Verbindung 
     async def disconnect(self, close_code):
         self.running = False
         await self.channel_layer.group_discard(self.group, self.channel_name)  # type: ignore
         
-    # Funktion zum Zuruecksetzen aller Variablen welche im Laufe eines Tests benötigt werden
     async def reset_vars(self, client = None):
         """
         Function for reseting all the run variables and the relays on the Modbus RTU Relay.
         """
-        #self.combinations.clear()
-        #TestConsumer.test.clear()
         if client != None:
             if client[1] == self.client_id or client[0][:3] == '127':
-                self.running = True
                 await self.send_master(client)
                 self.results.clear()
-                TestConsumer.index = 1
                 if not TestConsumer.test_running:
                     await self.modbus.reset_all()
+                    TestConsumer.combinations.clear()
+                    TestConsumer.index = 1
+                TestConsumer.test.clear()
+                print(TestConsumer.index, TestConsumer.combinations, TestConsumer.test)
         
-    # Funktion zum Senden der Nachrichten an Client - verallgemeinert mit "Message" und "Value"
     async def _send(self, message, value = None):
         await self.send(text_data=json.dumps({message: value}))
         if message != 'master' or message != 'false upload':
@@ -228,7 +211,6 @@ class TestConsumer(AsyncWebsocketConsumer):
     async def group_send(self, message, value = None):
         await self.channel_layer.group_send(self.group, {"type": "websocket.accept", 'message': json.dumps({message: value}), 'id' : self.channel_name}) # type: ignore
         
-    # Alle Funktionen für die Kommunikation zwischen Client und Server
     async def receive(self, text_data):
         """
         Function for recieving and sending information between the server and the client and proceeding that information to the
@@ -237,14 +219,10 @@ class TestConsumer(AsyncWebsocketConsumer):
         try:
             text_data_json = json.loads(text_data)
             type = text_data_json["type"]
-            # Nutzer klickt auf Home-Button
             if type == "home":
-                # self._send("home")
                 await self._send("home")
                 await self._send("master", self.master)
-                await self.reset_vars()
-                TestConsumer.test.clear()
-            # Nutzer klickt auf Zurueck-Button
+                await self.reset_vars(self.scope['client'])
             if type == "back":
                 TestConsumer.test.pop(len(TestConsumer.test)-1)
             if type == "auto":
@@ -255,25 +233,21 @@ class TestConsumer(AsyncWebsocketConsumer):
                 print("Manueller Durchlauf der Kombinationen")
                 await self._send(type)
                 TestConsumer.test.append(type)
-                print(TestConsumer.test)
             if type == "konfig":
                 print("Test über Konfig-File")
                 await self._send(type)
                 TestConsumer.test.append(type)
-                print(TestConsumer.test)
             if type == "manuell_comp":
                 print("Manuelle Komp. Auswahl")
                 TestConsumer.test.append(type)
-                print(TestConsumer.test)
             if type == "set_combinations":
                 print("set combinations")
                 combinations = text_data_json["comb"]
-                await self.set_Relay(combinations)
+                await self.set_combinations(combinations)
             if type == "Konfig-File":
                 print("Konfig-File recieved")
                 konfig = text_data_json["text"]
                 check = konfig.strip('\n').find(':')
-                print(check)
                 if konfig[:check] in self.comps:
                     with open("komp_pruefstand/static/Konfig.txt", "w") as txt:
                         txt.write(konfig)
@@ -283,33 +257,27 @@ class TestConsumer(AsyncWebsocketConsumer):
             if type == "Master-File":
                 print("Master-File recieved")
                 master = text_data_json["text"]
-                print(master[:6])
-                if master[:5] in self.comps:
-                    with open("komp_pruefstand/static/Komponenten.yaml", "w") as txt:
+                dots = master.strip('\n').find(':')
+                if master[:dots] in self.comps:
+                    with open("komp_pruefstand/static/Master.yaml", "w") as txt:
                         txt.write(master)
                     await self.send_master(None)
-                print(master[:6])
                 if master[:6] == 'Fehler':
-                    with open("/home/simonbader/Coding/Fehlerliste.csv", 'w') as csv_list:
+                    with open("/home/simonbader/Coding/Fehlerliste.csv", "w") as csv_list:
                         csv_list.write(master)
-                else:
+                if master[:dots] not in self.comps or master[:6] != 'Fehler':
                     await self._send("false upload")
-            # if type == "error_list":
-            #     with open(file="/home/simonbader/Coding/Fehlerliste.csv", newline='', encoding='utf-8', mode = "r") as csv_list:
-            #         csv_reader = csv.reader(csv_list)
-            #         output = io.StringIO()
-            #         writer = csv.writer(output)
-            #         writer.writerow(csv_reader)
-            #     list = TestConsumer.error_list.to_string()
-            #     #print(list)
-            #     await self.send(text_data=json.dumps({"error_list": list}))
             if type == "next":
                 await asyncio.sleep(0.05)
                 TestConsumer.index += 1
                 await self.run_combinations() # type: ignore
             if type == "delete":
+                for x in self.results_list:
+                    if self.results_list[x]['filename'] == text_data_json["message"]:
+                        self.results_list.pop(x)
+                        break
                 os.remove(text_data_json["message"])
-                await self.get_metadata()
+                await self._send("results", self.results_list)
             if type == "download":
                 with open(f'{text_data_json["message"]}', 'rb') as txt:
                     file = yaml.safe_load(txt)
@@ -323,7 +291,6 @@ class TestConsumer(AsyncWebsocketConsumer):
         except Exception as e:
             show_error(e)
     
-    # Funktion, welche das Master-Konfig-File an den Client sendet
     async def send_master(self, client):
         """
         Sends the Master-Config-File to the Client for displaying the possible choices to the user.
@@ -338,13 +305,12 @@ class TestConsumer(AsyncWebsocketConsumer):
         except Exception as e:
             show_error(e)
     
-    # Funktion, welche den Ladefortschritt an den Client sendet, damit dort der Ladebalken den Fortschritt des Tests anzeigen kann
     async def loading_bar(self):
         """
         Function for sending a countup to the client for displaying the progress to the user from 1 to 100
         """
         for x in range(1, 100):
-            if self.running:
+            if TestConsumer.test_running:
                 await asyncio.sleep(0.18)
                 await self._send("progress", x)
     
@@ -356,6 +322,9 @@ class TestConsumer(AsyncWebsocketConsumer):
         await self.modbus.walk_mode()
     
     async def send_progress(self, index:int):
+        """
+        Function that starts tracing the CAN-Bus communication on the system and safes each trace into an entry of the result dicitonary.
+        """
         component = {}
         for c in self.master:
             component[c] = ''
@@ -363,7 +332,6 @@ class TestConsumer(AsyncWebsocketConsumer):
             asyncio.create_task(self.loading_bar())
             asyncio.create_task(self.wake_and_walk())
             self.results[f'Konfig.{index}'], error = await ManualRead().read(TestConsumer.error_list)
-            print(self.results, error)
             self.results[f'Konfig.{index}']['Komponenten'] = component
             self.find_names(index)
             await self._send("progress", 100)
@@ -372,21 +340,20 @@ class TestConsumer(AsyncWebsocketConsumer):
             if index == len(TestConsumer.combinations):
                 print('Alle Kombinatoriken geschalten')
                 TestConsumer.test_running = False
-                TestConsumer.index = 1
                 await self._send("done")
         except Exception as e:
             await self._send("done")
             show_error(e)
     
-    async def set_Relay(self, combinations):
+    async def set_combinations(self, combinations):
+        """
+        Function that sets the relays of a combinations when the client starts a test via the manuall component choice.
+        """
         comb = []
         try:
-            #with open(f"komp_pruefstand/static/Komponenten.yaml", "r") as f:
-            #data = yaml.safe_load(f)
             for combination in combinations:
                 print(combination)
             for combination in combinations:
-                #for name in data:
                 for name in self.master:
                     if combination[name] != None:
                         comb.append(self.master[name][combination[name]]['relay'])
@@ -434,11 +401,12 @@ class TestConsumer(AsyncWebsocketConsumer):
                     await asyncio.sleep(0.5)
                     await self.modbus.reset_all()
                     index = 0
+            print(index, TestConsumer.index, len(TestConsumer.combinations))
             if index or TestConsumer.index == len(TestConsumer.combinations):
-                filename = dt.now().strftime("%Y_%m_%d-%H_%M_%S")
-                with open(f'{self.path}/TestErgebnis_{filename}.yaml', 'w') as file:
+                metadata = dt.now().strftime("%Y_%m_%d-%H_%M_%S")
+                filename = (f'{self.path}/TestErgebnis_{metadata}.yaml')
+                with open(filename, 'w') as file:
                     file.write(yaml.dump(self.results, indent=4, allow_unicode=True))
-                TestConsumer.combinations.clear()
                 await self.get_metadata()
         except Exception as e:
             show_error(e)
@@ -518,8 +486,8 @@ class TestConsumer(AsyncWebsocketConsumer):
                     choices = list(set(choices))
                     comp = comp[0]
                     for i in range(len(self.master[comp])):
-                        variants_name[i] = str(self.master[comp][i]['name'])  #Array mit Namen der Unterkomponenten, von Komp, wo Auswahl > 1
-                        variants_serial[i] = self.master[comp][i]['serial']   #Array mit Seriennummer der Unterkomponenten, von Komp, wo Auswahl > 1
+                        variants_name[i] = str(self.master[comp][i]['name'])
+                        variants_serial[i] = self.master[comp][i]['serial']
                     print(f'Anzahl Wahl {comp}: {len(choices)}')
                     odds = []
                     for name in range(len(choices)):
@@ -609,13 +577,11 @@ class TestConsumer(AsyncWebsocketConsumer):
                     k = choices.find('k')
                     choices = choices[:k] + ' ' + choices[k:]
         return choices
-    
-    def check_results(self):
-        for test in self.results:
-            print(f'Test {test}:\n{self.results[test]}')
-            print('---------------------')
-    
+
     def find_names(self, index):
+        """
+        Matches the choosen relays for one combination with the name of the component variant and saves it into the result dicitonary.
+        """
         for relay in TestConsumer.combinations[index-1]:
             for component in self.master:
                 for name in self.master[component]:
@@ -633,6 +599,8 @@ class TestConsumer(AsyncWebsocketConsumer):
                         else:
                             self.results[f'Konfig.{index}']['Komponenten'][component] =  name['serial']
                             break
+                if self.results[f'Konfig.{index}']['Komponenten'][component] == '':
+                    self.results[f'Konfig.{index}']['Komponenten'][component] = 'Keine Wahl getroffen'
                 else:
                     continue
                 break
@@ -640,23 +608,30 @@ class TestConsumer(AsyncWebsocketConsumer):
                 continue
             
     async def get_metadata(self):
+        """
+        Function that creates a dictionary with the filenames of the test results and the metadata (date, time).
+        Scans one given test result file for an EMCY-Message and marks it accordingly.
+        When complete, the dictionary is send to the server.
+        """
         try:
             self.filenames = sorted(glob.glob(self.path + '/*.yaml'))
             self.filenames.reverse()
             metadata = {}
             metadata['TestResult'] = {}
-            results = {}
             for i, filename in enumerate(self.filenames):
-                results[f'{i}'] = {}
-                results[f'{i}']['filename'] = self.filenames[i]
-                results[f'{i}']['created_at'] = os.path.getatime(filename)
-                with open(f'{filename}', 'r') as file:
+                print(f'analyzing file {i+1} of {len(self.filenames)}')
+                self.results_list[f'{i}'] = {}
+                self.results_list[f'{i}']['filename'] = self.filenames[i]
+                self.results_list[f'{i}']['created_at'] = os.path.getatime(filename)
+                with open(filename, 'r') as file:
                     t = yaml.safe_load(file)
                     if 'EMCY' in t:
-                        results[f'{i}']['emcy'] = True
+                        self.results_list[f'{i}']['emcy'] = True
+                    elif not t:
+                        os.remove(filename)
                     else:
-                        results[f'{i}']['emcy'] = False
-            await self._send("results", results)
+                        self.results_list[f'{i}']['emcy'] = False
+            await self._send("results", self.results_list)
         except Exception as e:
             show_error(e)
 

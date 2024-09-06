@@ -1,5 +1,6 @@
-Battery: 360, 250
-Motor: HPR50, HPR40, HPR60
-Display: Barend, Full Color 
-Smartbox: 334500.0300
-Ladegerät: 334498.0103
+Battery: 360, 290
+Motor: 329587.0104
+Display: TQ
+Smartbox: 334500.0100
+Range EXT: 329592.0101
+Service Dongle: Service Dongle

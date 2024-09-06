@@ -1,8 +1,6 @@
 {
     "Prio1": {
         "MOTORSTEUERUNG": {
-            "P1_MSG_EMCYOFF": 0,
-            "P1_MSG_EMCY": 0,
             "P1_MSG_SYNC": 0,
             "P1_MSG_PRIO_BROADCAST": 0,
             "P1_MSG_REPLPD": 0,
@@ -13,6 +11,15 @@
             "P1_MSG_WARNING": 0,
             "P1_MSG_BROADCAST": 0,
             "P1_MSG_SLAVECHG": 0,
+            "P1_MSG_EMCY": {
+                "DATA": "75 04 05 03 C8 00 00 00 ",
+                "ECODE": 1141,
+                "EGROUP": "0x5",
+                "ECOMP": "0x3"
+            },
+            "P1_MSG_EMCYOFF": {
+                "DATA": "00 00 00 00 00 00 00 00 "
+            },
             "Summe": 0
         },
         "SCHIEBEHILFEGERAET": {
@@ -92,6 +99,7 @@
         },
         "DISPLAY": {
             "P1_MSG_EMCYOFF": 0,
+            "P1_MSG_EMCY": 0,
             "P1_MSG_SYNC": 0,
             "P1_MSG_PRIO_BROADCAST": 0,
             "P1_MSG_REPLPD": 0,
@@ -102,12 +110,6 @@
             "P1_MSG_WARNING": 0,
             "P1_MSG_BROADCAST": 0,
             "P1_MSG_SLAVECHG": 0,
-            "P1_MSG_EMCY": {
-                "DATA": "01 54 04 01 00 00 00 00 ",
-                "ECODE": 21505,
-                "EGROUP": "0x4",
-                "ECOMP": "0x1"
-            },
             "Summe": 0
         },
         "LICHT": {
@@ -232,8 +234,8 @@
             "Summe": 0
         },
         "BMS": {
-            "P3_MSG_PDR": 0,
-            "P3_MSG_PDW": 0,
+            "P3_MSG_PDR": 130,
+            "P3_MSG_PDW": 66,
             "P3_MSG_SDR": 0,
             "P3_MSG_SDW": 0,
             "Summe": 0
@@ -260,8 +262,8 @@
             "Summe": 0
         },
         "DISPLAY": {
-            "P3_MSG_PDR": 0,
-            "P3_MSG_PDW": 0,
+            "P3_MSG_PDR": 47,
+            "P3_MSG_PDW": 576,
             "P3_MSG_SDR": 0,
             "P3_MSG_SDW": 0,
             "Summe": 0
@@ -316,21 +318,19 @@
             "Summe": 0
         }
     },
-    "No Match": 20,
+    "No Match": 611,
     "EMCY": {
-        "Fehler Reporter": "DISPLAY",
+        "Fehler Reporter": "MOTORSTEUERUNG",
         "Level": "Error",
-        "Komponentenfehlernummer": "1",
-        "Fehlerkomponente": "DRV",
-        "Fehlergruppe": "CONN",
+        "Komponentenfehlernummer": "117",
+        "Fehlerkomponente": "BATT",
+        "Fehlergruppe": "COMM",
         "Schweregrad": "1",
-        "Fehlerbeschreibung": "Verbindung zu Motor verloren - Nachrichten Timeout",
+        "Fehlerbeschreibung": "Batterie Initialisierungsfehler",
         "M\u00f6gliche Fehlerursache": [
-            "Verbindungsproblem zwischen Motor und Display",
-            "Nicht ordnungsgem\u00e4\u00df durchgef\u00fchrtes Update",
-            "Elektronikfehler Display",
-            "Elektronikfehler Motor"
+            "Verbindungsproblem zwischen Motor und Batterie",
+            "Batteriefehler"
         ],
-        "Displayanzeige": "ERR 5401 DRV CONN"
+        "Displayanzeige": "ERR 0475 BATT COMM"
     }
 }
