@@ -637,10 +637,3 @@ class TestConsumer(AsyncWebsocketConsumer):
 
     def stop(self):
         self.running = False
-        
-#Thomas Zengerle -> kabel
-#Matthias Schoppe -> can
-#Kundennummer inning 3006166
-#Buchungsnummer: P/00026620/000002 --> PSP Element bei BANF
-#Manuela Kabelbaum Bestellung mit PSP Element
-# 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
