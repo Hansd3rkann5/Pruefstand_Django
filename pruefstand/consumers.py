@@ -635,4 +635,8 @@ class TestConsumer(AsyncWebsocketConsumer):
             show_error(e)
 
     def stop(self):
+<<<<<<< HEAD
         self.running = False
+=======
+        self.running = False
+>>>>>>> 7b97fa14591ac76c8a1f80160936462c2f6d9870
